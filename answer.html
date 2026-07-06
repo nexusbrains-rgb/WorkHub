@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>日程のご回答</title>
+<style>
+  :root { --a:#0AB1B6; --ad:#078F93; --as:#E6F7F7; --border:#E4E8EC; --gray:#7A8494; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#F6F9FA; color:#1C242C; font-size:16px;
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",Meiryo,sans-serif; }
+  .wrap { max-width:560px; margin:0 auto; padding:20px 16px 40px; }
+  .logo { display:flex; align-items:center; gap:10px; font-size:20px; font-weight:800; margin-bottom:18px; }
+  .logo::before { content:""; width:12px; height:26px; border-radius:6px; background:linear-gradient(180deg,var(--a),var(--ad)); }
+  .card { background:#fff; border:1px solid var(--border); border-radius:16px; padding:22px 20px; margin-bottom:14px; }
+  h1 { font-size:20px; margin:0 0 6px; }
+  .meta { font-size:14px; color:var(--gray); margin-bottom:4px; }
+  label { display:block; font-size:14px; font-weight:700; color:#5B6675; margin:16px 0 6px; }
+  select, input { width:100%; padding:12px 13px; border-radius:10px; border:1px solid #D8DEE4; font-size:16px; font-family:inherit; background:#fff; }
+  select:focus, input:focus { outline:none; border-color:var(--a); box-shadow:0 0 0 3px var(--as); }
+  .cand { border:1px solid var(--border); border-radius:12px; padding:14px 15px; margin-top:10px; }
+  .cand .dt { font-size:17px; font-weight:800; margin-bottom:10px; }
+  .opts { display:flex; gap:8px; }
+  .opt { flex:1; padding:12px 0; border-radius:10px; border:1.5px solid #D8DEE4; background:#fff; font-size:18px; font-weight:800; cursor:pointer; font-family:inherit; color:#5B6675; }
+  .opt.on-maru { border-color:var(--a); background:var(--as); color:var(--ad); }
+  .opt.on-sankaku { border-color:#E8A23D; background:#FDF3E3; color:#9A6A1F; }
+  .opt.on-batsu { border-color:#C24545; background:#FBEEEE; color:#C24545; }
+  .send { width:100%; margin-top:20px; padding:16px; border-radius:12px; border:none; background:var(--a); color:#fff; font-size:17px; font-weight:800; cursor:pointer; font-family:inherit; }
+  .send:disabled { background:#C9D1D8; cursor:not-allowed; }
+  .done { text-align:center; padding:40px 20px; }
+  .done .mark { font-size:52px; margin-bottom:12px; }
+  .note { font-size:13px; color:var(--gray); line-height:1.8; margin-top:14px; }
+  .err { background:#FBEEEE; border:1px solid #E5C4C4; color:#8A3232; border-radius:10px; padding:13px 15px; font-size:14px; margin-top:12px; }
+  .loading { text-align:center; color:var(--gray); padding:50px 0; }
+  footer { text-align:center; font-size:12px; color:#AEB7C0; padding:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">WorkHub 日程調整</div>
+  <div id="app"><div class="loading">読み込んでいます…</div></div>
+</div>
+<footer>Powered by Kiasu Co., Ltd.</footer>
+
+<script>
+"use strict";
+// ▼▼▼ 設置時にGASのURLを設定してください ▼▼▼
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzYhCX_LEb2jLETeNMIjiOzo3QQOGRaPpBqmDQiChXjSdaOmik3kvnrZh3VmwVgYItz7g/exec";
+// ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+const WD=["日","月","火","水","木","金","土"];
+const fmtMD = iso => { const d=new Date(iso+"T00:00:00"); return `${d.getMonth()+1}月${d.getDate()}日(${WD[d.getDay()]})`; };
+const esc = s => String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const app = document.getElementById("app");
+let ADJ = null;
+const answers = {};
+
+async function init(){
+  const id = new URLSearchParams(location.search).get("id");
+  if(!GAS_URL){ app.innerHTML = `<div class="card"><div class="err">このページはまだ設定が完了していません（GAS URL未設定）。主催者にご連絡ください。</div></div>`; return; }
+  if(!id){ app.innerHTML = `<div class="card"><div class="err">URLが正しくありません。主催者から届いたURLをそのままお開きください。</div></div>`; return; }
+  try{
+    const r = await fetch(`${GAS_URL}?action=adj&id=${encodeURIComponent(id)}`);
+    const data = await r.json();
+    if(!data.ok){ throw new Error(data.error==="not_found" ? "この調整は見つかりませんでした（終了した可能性があります）" : "読み込みに失敗しました"); }
+    ADJ = data.adj;
+    if(ADJ.status !== "調整中"){
+      app.innerHTML = `<div class="card done"><div class="mark">📅</div><h1>この日程は確定済みです</h1>
+        <div class="meta" style="margin-top:8px">${esc(ADJ.title)}<br>確定日時：${esc(ADJ.confirmed||"")}</div></div>`;
+      return;
+    }
+    renderForm();
+  }catch(e){
+    app.innerHTML = `<div class="card"><div class="err">${esc(e.message)}</div></div>`;
+  }
+}
+
+function renderForm(){
+  const answered = (ADJ.responses||[]).map(r=>r.name);
+  const participants = ADJ.participants||[];
+  app.innerHTML = `
+    <div class="card">
+      <h1>${esc(ADJ.title)}</h1>
+      <div class="meta">所要時間：${ADJ.duration}分</div>
+      ${answered.length?`<div class="meta">回答済み：${answered.map(esc).join("、")}</div>`:""}
+      <label>お名前</label>
+      ${participants.length?`
+        <select id="nameSel">
+          <option value="">選択してください</option>
+          ${participants.map(p=>`<option ${answered.includes(p)?"":""}>${esc(p)}</option>`).join("")}
+          <option value="__other__">その他（名前を入力）</option>
+        </select>
+        <input id="nameInput" placeholder="お名前を入力" style="display:none;margin-top:8px">`
+      :`<input id="nameInput" placeholder="お名前を入力">`}
+      <label>各候補のご都合をタップしてください</label>
+      ${ADJ.candidates.map(c=>`
+        <div class="cand">
+          <div class="dt">${fmtMD(c.date)} ${c.time}〜</div>
+          <div class="opts" data-cid="${c.id}">
+            <button class="opt" data-v="○">○</button>
+            <button class="opt" data-v="△">△</button>
+            <button class="opt" data-v="×">×</button>
+          </div>
+        </div>`).join("")}
+      <button class="send" id="sendBtn" disabled>回答を送信する</button>
+      <div class="note">※ 登録・ログインは不要です。回答は主催者にのみ共有されます。回答をやり直す場合は、同じ名前でもう一度送信してください。</div>
+      <div id="errBox"></div>
+    </div>`;
+
+  const nameSel = document.getElementById("nameSel");
+  const nameInput = document.getElementById("nameInput");
+  if(nameSel){
+    nameSel.addEventListener("change", ()=>{
+      nameInput.style.display = nameSel.value==="__other__" ? "block" : "none";
+      updateSend();
+    });
+  }
+  nameInput && nameInput.addEventListener("input", updateSend);
+
+  document.querySelectorAll(".opts").forEach(box=>{
+    box.querySelectorAll(".opt").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        answers[box.dataset.cid] = btn.dataset.v;
+        box.querySelectorAll(".opt").forEach(b=>b.className="opt");
+        btn.className = "opt " + (btn.dataset.v==="○"?"on-maru":btn.dataset.v==="△"?"on-sankaku":"on-batsu");
+        updateSend();
+      });
+    });
+  });
+
+  document.getElementById("sendBtn").addEventListener("click", send);
+}
+
+function currentName(){
+  const sel = document.getElementById("nameSel");
+  const inp = document.getElementById("nameInput");
+  if(sel && sel.value && sel.value!=="__other__") return sel.value;
+  return inp ? inp.value.trim() : "";
+}
+
+function updateSend(){
+  const allAnswered = ADJ.candidates.every(c=>answers[c.id]);
+  document.getElementById("sendBtn").disabled = !(currentName() && allAnswered);
+}
+
+async function send(){
+  const btn = document.getElementById("sendBtn");
+  btn.disabled = true; btn.textContent = "送信中…";
+  try{
+    const r = await fetch(GAS_URL, {
+      method:"POST", headers:{"Content-Type":"text/plain"},
+      body: JSON.stringify({ action:"respond", adjId:ADJ.id, name:currentName(), answers })
+    });
+    const data = await r.json();
+    if(!data.ok) throw new Error(data.error==="closed" ? "この日程はすでに確定しています" : "送信に失敗しました");
+    app.innerHTML = `<div class="card done"><div class="mark">✅</div><h1>回答を送信しました</h1>
+      <div class="meta" style="margin-top:8px">${esc(ADJ.title)}<br>ご協力ありがとうございました。<br>日程が確定しましたら主催者からご連絡します。</div></div>`;
+  }catch(e){
+    btn.disabled = false; btn.textContent = "回答を送信する";
+    document.getElementById("errBox").innerHTML = `<div class="err">${esc(e.message)}。通信環境をご確認のうえ再度お試しください。</div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
