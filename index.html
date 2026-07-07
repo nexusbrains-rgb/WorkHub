@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="./favicon.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#0AB1B6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WorkHub">
+<title>WorkHub｜業務支援ツール</title>
+<style>
+  :root { --a:#0AB1B6; --ad:#078F93; --as:#E6F7F7; --border:#E4E8EC; --gray:#7A8494; --text:#1C242C; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--text); font-size:16px; font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",Meiryo,sans-serif; }
+  header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:20px 28px 14px; max-width:1360px; margin:0 auto; }
+  .logo { display:flex; align-items:center; gap:12px; font-size:26px; font-weight:800; letter-spacing:.04em; }
+  .logo::before { content:""; width:15px; height:32px; border-radius:8px; background:linear-gradient(180deg,var(--a),var(--ad)); }
+  .hright { display:flex; align-items:center; gap:10px; }
+  .company { font-size:15px; color:var(--gray); }
+  .userbtn { display:flex; align-items:center; gap:6px; border:1px solid var(--border); background:#fff; border-radius:99px; padding:7px 15px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; color:var(--text); }
+  .refbtn { border:1px solid var(--border); background:#fff; border-radius:99px; padding:7px 13px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; color:var(--ad); }
+  nav { display:flex; gap:6px; padding:0 20px; border-bottom:1px solid #ECEFF2; max-width:1360px; margin:0 auto; overflow-x:auto; }
+  nav button { display:flex; align-items:center; gap:8px; padding:14px 20px; background:none; border:none; border-bottom:3px solid transparent; font-size:17px; font-weight:700; color:#8A93A2; cursor:pointer; white-space:nowrap; font-family:inherit; }
+  nav button.on { color:var(--ad); border-bottom-color:var(--a); }
+  main { max-width:1360px; margin:0 auto; padding:24px 24px 40px; }
+  footer { text-align:center; font-size:13px; color:#AEB7C0; padding:14px 20px 24px; }
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--as); border:1px solid var(--a); color:var(--ad); font-size:15px; font-weight:700; border-radius:10px; padding:12px 20px; z-index:99; animation:fadeUp .3s ease; max-width:90%; box-shadow:0 4px 14px rgba(0,0,0,.08); }
+  .toast.warn { background:#FBEEEE; border-color:#C24545; color:#8A3232; }
+  @keyframes fadeUp { from{opacity:0; transform:translate(-50%,8px)} to{opacity:1; transform:translate(-50%,0)} }
+  .fade { animation:fu .3s ease; } @keyframes fu { from{opacity:0; transform:translateY(8px)} to{opacity:1} }
+  .overlay { position:fixed; inset:0; background:rgba(20,30,40,.45); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
+  .modal { background:#fff; border-radius:18px; padding:26px 24px; max-width:420px; width:100%; }
+  .modal h2 { margin:0 0 8px; font-size:19px; }
+  .modal p { margin:0 0 16px; font-size:14px; color:var(--gray); line-height:1.7; }
+  .memberbtn { display:block; width:100%; text-align:left; padding:13px 16px; border-radius:11px; border:1px solid var(--border); background:#fff; font-size:16px; font-weight:700; cursor:pointer; font-family:inherit; margin-bottom:8px; }
+  .memberbtn:hover { border-color:var(--a); background:var(--as); }
+  .demo { background:#FDF6EE; border:1px solid #EDD6B4; color:#9A6A1F; border-radius:10px; padding:10px 14px; font-size:13px; margin:0 auto 14px; max-width:1312px; }
+  .home-layout { display:grid; grid-template-columns:360px 1fr; gap:20px; align-items:start; }
+  @media (max-width:860px) { .home-layout { grid-template-columns:1fr; } }
+  .applist { display:flex; flex-direction:column; gap:14px; }
+  .appbtn { display:flex; align-items:center; gap:16px; text-align:left; background:linear-gradient(135deg,#FDFEFE,#F4FAFA); border:1px solid var(--border); border-radius:20px; padding:18px 20px; cursor:pointer; font-family:inherit; color:inherit; transition:transform .15s, box-shadow .15s, border-color .15s; box-shadow:0 2px 8px rgba(28,36,44,.05); }
+  .appbtn:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(10,177,182,.18); border-color:var(--a); }
+  .appbtn .icon { width:58px; height:58px; border-radius:15px; display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0; background:linear-gradient(135deg,var(--a),var(--ad)); box-shadow:0 3px 8px rgba(10,177,182,.35); }
+  .appbtn .nm { font-size:18px; font-weight:800; }
+  .appbtn .ds { font-size:13px; color:var(--gray); margin-top:4px; line-height:1.6; }
+  .appbtn .open { margin-left:auto; display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0; }
+  .appbtn .open .num { font-size:30px; font-weight:800; color:var(--ad); line-height:1; }
+  .appbtn .open .num small { font-size:13px; color:var(--gray); font-weight:700; }
+  .appbtn .open .lbl { font-size:12px; font-weight:800; color:#fff; background:var(--a); border-radius:99px; padding:4px 12px; }
+  .panel { background:#fff; border:1px solid var(--border); border-radius:16px; padding:20px 22px; margin-bottom:16px; }
+  .panel .ph { font-size:17px; font-weight:800; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; }
+  .panel .more { font-size:13px; font-weight:700; color:var(--ad); background:none; border:none; cursor:pointer; font-family:inherit; }
+  .srow { display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid #F1F4F6; font-size:16px; }
+  .srow:last-child { border-bottom:none; }
+  .srow b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .srow .sub { font-size:13px; color:var(--gray); margin-left:auto; flex-shrink:0; }
+  .pill { font-size:12px; font-weight:800; color:var(--ad); background:var(--as); border-radius:6px; padding:3px 9px; flex-shrink:0; }
+  .split { display:grid; grid-template-columns:1fr 400px; gap:20px; align-items:start; }
+  @media (max-width:960px) { .split { grid-template-columns:1fr; } }
+  .side { background:#FAFBFC; border:1px solid var(--border); border-radius:16px; padding:16px; }
+  .side .sh { font-size:15px; font-weight:800; color:var(--ad); letter-spacing:.06em; margin-bottom:10px; }
+  .alertbox { background:#FDF6EE; border:1px solid #EDD6B4; border-radius:12px; padding:14px 16px; margin-bottom:16px; }
+  .alertbox .h { font-size:15px; font-weight:800; color:#9A6A1F; margin-bottom:6px; }
+  .arow { display:flex; justify-content:space-between; align-items:center; gap:10px; background:#fff; border:1px solid #F0E2C8; border-radius:8px; padding:12px 14px; margin-top:6px; font-size:16px; flex-wrap:wrap; }
+  .arow .due { color:#C24545; font-size:14px; font-weight:700; }
+  .addbtn { width:100%; padding:15px; border-radius:12px; border:1.5px dashed var(--a); background:#fff; color:var(--ad); font-size:16px; font-weight:700; cursor:pointer; margin-bottom:16px; font-family:inherit; }
+  .form { background:#FAFBFC; border:1px solid var(--border); border-radius:14px; padding:20px; margin-bottom:16px; }
+  .form .ft { font-size:16px; font-weight:800; margin-bottom:14px; }
+  label { display:block; font-size:14px; font-weight:700; color:#5B6675; margin-bottom:14px; }
+  .req { font-size:11px; color:#C24545; margin-left:5px; }
+  input, select, textarea { display:block; width:100%; margin-top:6px; padding:11px 13px; border-radius:9px; border:1px solid #D8DEE4; font-size:16px; background:#fff; font-family:inherit; }
+  input[type="checkbox"] { display:inline-block; width:18px; height:18px; margin:0 8px 0 0; padding:0; accent-color:var(--a); vertical-align:middle; }
+  .chk { display:flex; align-items:center; font-size:15px; font-weight:700; color:#2A3540; margin-bottom:14px; cursor:pointer; }
+  input:focus, select:focus, textarea:focus { outline:none; border-color:var(--a); box-shadow:0 0 0 3px var(--as); }
+  .row { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+  .prim { padding:12px 26px; border-radius:9px; border:none; background:var(--a); color:#fff; font-size:16px; font-weight:800; cursor:pointer; font-family:inherit; }
+  .ghost { padding:11px 18px; border-radius:9px; border:1px solid #D8DEE4; background:#fff; color:#5B6675; font-size:15px; font-weight:600; cursor:pointer; font-family:inherit; }
+  .mini { border:1px solid #D8DEE4; background:#fff; color:#8A93A2; border-radius:8px; padding:6px 14px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; }
+  .miniA { border:1px solid var(--a); background:#fff; color:var(--ad); border-radius:8px; padding:6px 14px; font-size:14px; font-weight:800; cursor:pointer; white-space:nowrap; font-family:inherit; }
+  .card { background:#fff; border:1px solid var(--border); border-radius:14px; margin-bottom:12px; overflow:hidden; }
+  .chead { display:flex; align-items:center; gap:12px; width:100%; padding:16px 18px; background:none; border:none; cursor:pointer; font-family:inherit; color:inherit; }
+  .chead .title { flex:1; text-align:left; font-weight:800; font-size:17px; }
+  .tag { font-size:13px; font-weight:800; border-radius:6px; padding:4px 10px; flex-shrink:0; }
+  .tagP { color:#9A6A1F; background:#FDF3E3; } .tagD { color:var(--ad); background:var(--as); }
+  .meta { font-size:13px; color:#8A93A2; margin-bottom:10px; }
+  .cand { display:flex; align-items:center; gap:10px; border:1px solid #ECEFF2; border-radius:10px; padding:12px 14px; margin-bottom:8px; }
+  .cand.best { border:1.5px solid var(--a); background:var(--as); }
+  .besttag { font-size:12px; font-weight:800; color:#fff; background:var(--a); border-radius:6px; padding:2px 8px; margin-left:8px; }
+  .confirm { padding:10px 15px; border-radius:8px; border:none; background:var(--a); color:#fff; font-size:14px; font-weight:800; cursor:pointer; white-space:nowrap; font-family:inherit; }
+  .confirm:disabled { background:#C9D1D8; cursor:not-allowed; }
+  .urlrow { display:flex; gap:8px; margin:8px 0 12px; }
+  .urlrow input { margin-top:0; flex:1; background:#F6F8FA; font-size:13px; }
+  .rstat { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+  .rchip { font-size:12px; font-weight:700; border-radius:6px; padding:4px 10px; }
+  .rchip.ok { background:var(--as); color:var(--ad); }
+  .rchip.wait { background:#F1F4F6; color:#8A93A2; }
+  .calhead { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .calhead b { font-size:17px; }
+  .arr { width:38px; height:38px; border-radius:9px; border:1px solid #D8DEE4; background:#fff; font-size:19px; cursor:pointer; color:var(--ad); }
+  .cal { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; border:1px solid var(--border); border-radius:14px; padding:10px; margin-bottom:14px; background:#fff; }
+  .calw { text-align:center; font-size:12px; font-weight:800; padding:4px 0; color:var(--gray); }
+  .calw.sun { color:#C24545; } .calw.sat { color:#3D6BA8; }
+  .cell { aspect-ratio:1; border:none; background:none; border-radius:9px; font-size:15px; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; color:var(--text); font-family:inherit; }
+  .cell.today { background:var(--as); font-weight:800; color:var(--ad); }
+  .cell.sel { background:var(--a); color:#fff; font-weight:800; }
+  .dots { display:flex; gap:2px; } .dot { width:5px; height:5px; border-radius:50%; background:var(--a); }
+  .cell.sel .dot { background:#fff; }
+  .dayhead { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .dayhead b { font-size:16px; }
+  .sp { padding:9px 16px; border-radius:8px; border:none; background:var(--a); color:#fff; font-size:14px; font-weight:800; cursor:pointer; font-family:inherit; }
+  .empty { border:1px solid var(--border); border-radius:12px; padding:24px; text-align:center; font-size:15px; color:#8A93A2; background:#fff; }
+  .ev { display:flex; align-items:center; gap:12px; border:1px solid var(--border); border-radius:14px; padding:14px 16px; margin-bottom:8px; background:#fff; }
+  .ev .time { font-size:14px; font-weight:800; color:var(--ad); white-space:nowrap; }
+  .ev .body { flex:1; min-width:0; }
+  .ev .name { font-size:17px; font-weight:800; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .autotag { font-size:12px; font-weight:800; color:var(--ad); background:var(--as); border-radius:6px; padding:2px 8px; }
+  .whotag { font-size:12px; font-weight:700; color:#5B6675; background:#fff; border:1px solid #D8DEE4; border-radius:6px; padding:2px 8px; }
+  .ev .place { font-size:14px; color:var(--gray); margin-top:3px; }
+  .btncol { display:flex; flex-direction:column; gap:6px; flex-shrink:0; }
+  .seclabel { font-size:13px; font-weight:800; color:#8A93A2; letter-spacing:.1em; margin:4px 0 10px; }
+  .task { display:flex; align-items:flex-start; gap:12px; padding:15px 17px; }
+  .task.done { opacity:.55; } .task.done .tname { text-decoration:line-through; }
+  .badge { font-size:13px; font-weight:800; border-radius:7px; padding:6px 11px; white-space:nowrap; flex-shrink:0; margin-top:2px; }
+  .tname { font-size:17px; font-weight:800; }
+  .tmeta { font-size:13px; color:#8A93A2; margin-top:4px; }
+  .tmemo { font-size:14px; color:var(--gray); margin-top:5px; background:#F6F8FA; border-radius:7px; padding:7px 10px; line-height:1.6; }
+  .nl { font-size:13px; font-weight:800; color:var(--ad); letter-spacing:.08em; margin:10px 0 4px; }
+  .nb { font-size:15px; line-height:1.8; color:#2A3540; }
+  .todo-line { display:flex; gap:8px; margin-bottom:8px; }
+  .todo-line input:first-child { flex:1; margin-top:0; } .todo-line input:last-child { width:160px; margin-top:0; }
+  .note-small { font-size:13px; color:#7E8A99; line-height:1.7; margin-top:6px; }
+  .share-who { border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin:-6px 0 14px; background:#FAFCFC;
+    display:flex; flex-wrap:wrap; gap:4px 14px; }
+  .share-who .note-small { width:100%; }
+  .share-chk { display:inline-flex; align-items:center; font-size:14px; font-weight:600; color:#1C242C; margin:0; padding:4px 0; cursor:pointer; }
+  .guesttag { display:inline-block; margin-left:6px; padding:1px 8px; border-radius:999px; background:#FFF3E0; color:#B26A00; font-size:11px; font-weight:800; }
+  .guest-add { border:1px dashed var(--border); border-radius:10px; padding:12px 14px; margin:-6px 0 14px; }
+  .loading { text-align:center; color:var(--gray); padding:60px 0; font-size:16px; }
+  /* ===== ナビ（PC=上部タブ／モバイル=下部固定タブバー） ===== */
+  nav button { position:relative; }
+  nav .nico { display:inline-flex; align-items:center; }
+  @media (max-width:700px){
+    nav { position:fixed; bottom:0; left:0; right:0; max-width:none; background:#fff; border-top:1px solid #ECEFF2; border-bottom:none;
+      display:flex; justify-content:space-around; gap:0; padding:4px 4px calc(6px + env(safe-area-inset-bottom)); z-index:90;
+      box-shadow:0 -4px 18px rgba(28,36,44,.08); overflow:visible; }
+    nav button { flex:1; flex-direction:column; gap:3px; padding:7px 2px 4px; font-size:11px; border-bottom:none; }
+    nav button.on { color:var(--ad); }
+    nav .navbadge { position:absolute; top:2px; right:calc(50% - 26px); min-width:17px; height:17px; font-size:11px; }
+    main { padding-bottom:96px; }
+    footer { padding-bottom:96px; }
+    .toast { bottom:calc(96px + env(safe-area-inset-bottom)); }
+  }
+  /* ===== タスク・予定カード（チェックボックス＋…メニュー、モバイルはボタン下段） ===== */
+  .tchk { width:23px; height:23px; margin:3px 0 0; flex-shrink:0; accent-color:var(--a); cursor:pointer; }
+  .kebabwrap { position:relative; }
+  .kmenu { display:none; position:absolute; right:0; top:calc(100% + 4px); background:#fff; border:1px solid var(--border);
+    border-radius:11px; box-shadow:0 8px 24px rgba(28,36,44,.14); z-index:30; min-width:140px; overflow:hidden; }
+  .kmenu.open { display:block; }
+  .kmenu button { display:block; width:100%; text-align:left; padding:11px 15px; border:none; background:#fff;
+    font-family:inherit; font-size:14px; font-weight:700; color:#3A4552; cursor:pointer; }
+  .kmenu button:hover { background:var(--as); }
+  .kmenu .kdanger { color:#C24545; }
+  @media (max-width:700px){
+    .task, .ev { flex-wrap:wrap; }
+    .task .btncol, .ev .btncol { flex-direction:row; width:100%; margin-top:10px; }
+    .kmenu { right:auto; left:0; }
+    #nf_todos .todo-line { flex-direction:column; gap:6px; }
+    #nf_todos .todo-line .td-due, #nf_todos .todo-line .td-who { width:100% !important; }
+  }
+  /* ===== 日程調整：確定ボタンの強弱・集計 ===== */
+  .confirm.alt { background:#fff; color:var(--ad); border:1.5px solid var(--a); }
+  .anscnt { font-size:12px; font-weight:800; color:#5B6675; background:#F3F6F8; border-radius:6px; padding:2px 8px; margin-left:8px; }
+  /* ===== カレンダー：土日・祝日 ===== */
+  .cell .dsun, .cell .dhol { color:#C24545; } .cell .dsat { color:#3D6BA8; }
+  .cell.sel .dsun, .cell.sel .dsat, .cell.sel .dhol { color:#fff; }
+  .holname { font-size:10px; font-weight:800; color:#C24545; line-height:1.3; width:100%; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cell.sel .holname { color:#fff; }
+  @media (max-width:700px){ .cal.full .holname { display:none; } }
+  /* ===== 議事録詳細の強調 ===== */
+  .decbox { background:var(--as); border-left:4px solid var(--a); border-radius:8px; padding:10px 14px; font-size:15px; line-height:1.8; color:#1C3A3B; white-space:pre-wrap; }
+  .tdrow { display:flex; align-items:flex-start; gap:8px; padding:5px 0; font-size:15px; line-height:1.7; }
+  .tdrow svg { flex-shrink:0; margin-top:3px; color:var(--a); }
+  /* ===== 入力エラー ===== */
+  .err { border-color:#C24545 !important; box-shadow:0 0 0 3px #FBEEEE !important; }
+  .errbox { outline:2px solid #C24545; outline-offset:2px; border-radius:10px; }
+  .errmsg { color:#C24545; font-size:12px; font-weight:800; margin-top:5px; }
+  /* ===== スケルトンローディング ===== */
+  .skel { background:linear-gradient(90deg,#EEF2F4 25%,#F7FAFB 50%,#EEF2F4 75%); background-size:200% 100%;
+    animation:shimmer 1.4s infinite; border-radius:10px; }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+  /* ===== 空状態のCTA ===== */
+  .empty .prim { margin-top:14px; }
+
+  .searchbar { display:flex; gap:8px; margin-bottom:14px; }
+  .searchbar input { margin-top:0; flex:1; }
+  .searchbar select { margin-top:0; width:auto; min-width:150px; flex-shrink:0; }
+  .donetoggle { display:block; width:100%; text-align:left; border:1px solid var(--border); background:#FAFBFC; color:#8A93A2;
+    border-radius:12px; padding:13px 17px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; margin-bottom:12px; }
+  .navbadge { display:inline-flex; min-width:20px; height:20px; align-items:center; justify-content:center;
+    border-radius:99px; background:#E25555; color:#fff; font-size:12px; font-weight:800; padding:0 6px; }
+  .respnew { display:inline-block; border-radius:99px; background:#E25555; color:#fff; font-size:11px; font-weight:800; padding:2px 9px; flex-shrink:0; }
+  .todaybtn { height:38px; border-radius:9px; border:1px solid #D8DEE4; background:#fff; font-size:13px; font-weight:800;
+    cursor:pointer; color:var(--ad); padding:0 12px; font-family:inherit; }
+  .cal.full .cell { aspect-ratio:auto; min-height:80px; justify-content:flex-start; padding:5px 4px 4px; gap:3px; }
+  .cal.full .dots { display:none; }
+  .evlines { display:flex; flex-direction:column; gap:2px; width:100%; overflow:hidden; }
+  .evline { display:block; width:100%; font-size:11px; font-weight:700; line-height:1.5; color:var(--ad); background:var(--as);
+    border-radius:4px; padding:1px 5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left; }
+  .evline.tk { color:#9A6A1F; background:#FDF3E3; }
+  .evline.more { background:none; color:#8A93A2; text-align:center; padding:0; }
+  .cell.sel .evline { background:rgba(255,255,255,.28); color:#fff; }
+  @media (max-width:700px){
+    .cal.full .cell { aspect-ratio:1; min-height:auto; justify-content:center; padding:0; gap:2px; }
+    .cal.full .dots { display:flex; }
+    .cal.full .evlines { display:none; }
+  }
+  .mrow { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid #F1F4F6; }
+  .mrow:last-child { border-bottom:none; }
+  .mrow b { flex:1; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo" onclick="go('home')" style="cursor:pointer" title="ホームに戻る">WorkHub</div>
+  <div class="hright">
+    <span id="syncState" style="font-size:13px;font-weight:800;color:#B26A00"></span>
+    <span class="company" id="companyName"></span>
+    <button class="refbtn" onclick="reloadData()" title="最新の状態に更新"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3.5v5.5h-5.5"/></svg> 更新</button>
+    <button class="userbtn" id="userBtn" onclick="showUserPicker()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7.5" r="4"/></svg> <span id="userName">−</span></button>
+  </div>
+</header>
+<div id="demoBar"></div>
+<nav id="nav"></nav>
+<main id="main"><div style="max-width:900px;margin:0 auto">
+  <div class="skel" style="height:22px;width:38%;margin-bottom:18px"></div>
+  <div class="skel" style="height:86px;margin-bottom:12px"></div>
+  <div class="skel" style="height:86px;margin-bottom:12px"></div>
+  <div class="skel" style="height:86px;margin-bottom:12px;opacity:.7"></div>
+  <div class="skel" style="height:86px;opacity:.4"></div>
+</div></main>
+<footer>WorkHub ｜ Powered by Kiasu Co., Ltd.</footer>
+
+<script>
+"use strict";
+// ================================================================
+// ▼▼▼ 納品用設定（顧客ごとにここだけ変更してください） ▼▼▼
+// ================================================================
+const CONFIG = {
+  companyName: "株式会社サンプル",       // 貴社名
+  gasUrl: "https://script.google.com/macros/s/AKfycbzYhCX_LEb2jLETeNMIjiOzo3QQOGRaPpBqmDQiChXjSdaOmik3kvnrZh3VmwVgYItz7g/exec",
+  answerUrl: "https://nexusbrains-rgb.github.io/WorkHub/answer.html",
+};
+// ================================================================
+// ▲▲▲ 設定はここまで ▲▲▲
+// ================================================================
+
+document.getElementById("companyName").textContent = CONFIG.companyName;
+const REMOTE = !!CONFIG.gasUrl;
+
+// ================= ユーティリティ =================
+const KEY = "workhub_local_v1";
+const pad = n => String(n).padStart(2,"0");
+const toISO = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const today = () => { const d=new Date(); d.setHours(0,0,0,0); return d; };
+const addDays = (base,n) => { const d=new Date(base); d.setDate(d.getDate()+n); return toISO(d); };
+const WD=["日","月","火","水","木","金","土"];
+const fmtMD = iso => { if(!iso) return ""; const d=new Date(iso+"T00:00:00"); return `${d.getMonth()+1}/${d.getDate()}(${WD[d.getDay()]})`; };
+const daysUntil = iso => Math.round((new Date(iso+"T00:00:00")-today())/86400000);
+const MARK={"○":2,"△":1,"×":0};
+const esc = s => String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const T = today();
+// 一意ID：同一ミリ秒の同時作成でも衝突しない数値ID
+const uid = () => Date.now()*1000 + Math.floor(Math.random()*1000);
+
+// ===== SVGアイコン（OS差の出る絵文字の代わりに線画アイコンで統一） =====
+const ICONS={
+  home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5 10v11h14V10"/>',
+  users:'<path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M15.5 3.13a4 4 0 0 1 0 7.75"/>',
+  cal:'<rect x="3" y="4.5" width="18" height="17" rx="2.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="3" y1="10" x2="21" y2="10"/>',
+  tasks:'<rect x="3" y="3" width="18" height="18" rx="3.5"/><path d="M7.5 12.5l3.2 3.2 6-7"/>',
+  note:'<path d="M14 2.5H6.5A2 2 0 0 0 4.5 4.5v15a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V8z"/><path d="M14 2.5V8h5.5"/><line x1="15.5" y1="13" x2="8.5" y2="13"/><line x1="15.5" y1="17" x2="8.5" y2="17"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5l3 2.5"/>',
+  bell:'<path d="M18 8.5a6 6 0 0 0-12 0c0 6.5-2.5 8.5-2.5 8.5h17S18 15 18 8.5"/><path d="M13.7 20.5a2 2 0 0 1-3.4 0"/>',
+  user:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7.5" r="4"/>',
+  refresh:'<path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3.5v5.5h-5.5"/>',
+  mail:'<rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="m2.5 7 9.5 6.5L21.5 7"/>',
+  link:'<path d="M10 13.5a5 5 0 0 0 7.5.5l2.5-2.5a5 5 0 0 0-7-7l-1.4 1.4"/><path d="M14 10.5a5 5 0 0 0-7.5-.5L4 12.5a5 5 0 0 0 7 7l1.4-1.4"/>',
+  edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  undo:'<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15.2-6.4L3 13"/>',
+  pin:'<path d="M20 10c0 6-8 11.5-8 11.5S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+  sliders:'<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>',
+  dots:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+  check:'<circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5.5"/>',
+  hands:'<path d="M11 17l-2.5 2.5a2.2 2.2 0 0 1-3-3L11 11l3-1 4 1 3.5 3.5a2.2 2.2 0 0 1-3 3L16 15"/><path d="M11 11 8.5 8.5a2.2 2.2 0 0 0-3 3"/><path d="M14 10l3-3 4.5 4.5"/><path d="M7 7 2.5 11.5"/>',
+};
+function ico(name,size){
+  size=size||19;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0">${ICONS[name]||""}</svg>`;
+}
+
+// ===== 日本の祝日（2025〜2027年・振替休日含む。年が進んだら追記してください） =====
+const HOLIDAYS={
+"2025-01-01":"元日","2025-01-13":"成人の日","2025-02-11":"建国記念の日","2025-02-23":"天皇誕生日","2025-02-24":"振替休日",
+"2025-03-20":"春分の日","2025-04-29":"昭和の日","2025-05-03":"憲法記念日","2025-05-04":"みどりの日","2025-05-05":"こどもの日",
+"2025-05-06":"振替休日","2025-07-21":"海の日","2025-08-11":"山の日","2025-09-15":"敬老の日","2025-09-23":"秋分の日",
+"2025-10-13":"スポーツの日","2025-11-03":"文化の日","2025-11-23":"勤労感謝の日","2025-11-24":"振替休日",
+"2026-01-01":"元日","2026-01-12":"成人の日","2026-02-11":"建国記念の日","2026-02-23":"天皇誕生日","2026-03-20":"春分の日",
+"2026-04-29":"昭和の日","2026-05-03":"憲法記念日","2026-05-04":"みどりの日","2026-05-05":"こどもの日","2026-05-06":"振替休日",
+"2026-07-20":"海の日","2026-08-11":"山の日","2026-09-21":"敬老の日","2026-09-22":"国民の休日","2026-09-23":"秋分の日",
+"2026-10-12":"スポーツの日","2026-11-03":"文化の日","2026-11-23":"勤労感謝の日",
+"2027-01-01":"元日","2027-01-11":"成人の日","2027-02-11":"建国記念の日","2027-02-23":"天皇誕生日","2027-03-21":"春分の日",
+"2027-03-22":"振替休日","2027-04-29":"昭和の日","2027-05-03":"憲法記念日","2027-05-04":"みどりの日","2027-05-05":"こどもの日",
+"2027-07-19":"海の日","2027-08-11":"山の日","2027-09-20":"敬老の日","2027-09-23":"秋分の日","2027-10-11":"スポーツの日",
+"2027-11-03":"文化の日","2027-11-23":"勤労感謝の日"};
+
+// ================= データ層（GAS連携／未設定時はこのPC内に保存） =================
+let S = { events:[], tasks:[], notes:[], adjustments:[], members:[] };
+let CURRENT_USER = localStorage.getItem("workhub_user") || "";
+
+function saveLocal(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+// REMOTEモードでも、取得成功時にオフライン閲覧用キャッシュとして保存する
+function cacheNow(){ saveLocal(); LAST_SYNC=Date.now(); updateSyncState(); try{ localStorage.setItem("workhub_cache_time", String(Date.now())); }catch(e){} }
+
+async function apiPost(body){
+  const r = await fetch(CONFIG.gasUrl, { method:"POST", headers:{"Content-Type":"text/plain"}, body: JSON.stringify(body) });
+  return r.json();
+}
+
+// ===== 送信キュー：保存失敗時も未送信分を保持し、自動で再送する =====
+let PENDING=[];
+let QUEUE_NOTIFIED=false;
+let FLUSHING=false;
+function persist(type, item){
+  if(item && typeof item==="object"){ item.updatedAt=Date.now(); item.updatedBy=CURRENT_USER; }
+  if(!REMOTE){ saveLocal(); return; }
+  PENDING.push({action:"upsert", type, item});
+  flushQueue();
+}
+// 編集開始後に他の人が更新していないかの確認
+function conflictOk(cur, base, label){
+  if(base===undefined) return true;
+  if((cur.updatedAt||0)===(base||0)) return true;
+  const who=(cur.updatedBy && cur.updatedBy!==CURRENT_USER)?`${cur.updatedBy}さん`:"他の人";
+  return confirm(`この${label}は、あなたが編集を始めた後に${who}によって更新されています。\n自分の内容で上書きしますか？\n（キャンセルすると編集画面に戻ります。「↻ 更新」で最新の内容を確認できます）`);
+}
+function removeIt(type, id){
+  if(!REMOTE){ saveLocal(); return; }
+  PENDING.push({action:"delete", type, id});
+  flushQueue();
+}
+async function flushQueue(){
+  if(FLUSHING || !REMOTE) return;
+  FLUSHING=true;
+  while(PENDING.length){
+    try{
+      const r=await apiPost(PENDING[0]);
+      if(!r.ok) throw 0;
+      PENDING.shift();
+      QUEUE_NOTIFIED=false;
+    }catch(e){
+      if(!QUEUE_NOTIFIED){
+        notify(`保存に失敗しました。未送信データ（${PENDING.length}件）は自動で再送します。このページを閉じないでください`, true);
+        QUEUE_NOTIFIED=true;
+      }
+      break;
+    }
+  }
+  FLUSHING=false;
+  updateSyncState();
+}
+setInterval(()=>{ if(PENDING.length) flushQueue(); }, 10000);
+window.addEventListener("beforeunload", e=>{
+  if(PENDING.length){ e.preventDefault(); e.returnValue=""; }
+});
+let LAST_SYNC=0;
+function updateSyncState(){
+  const el=document.getElementById("syncState");
+  if(!el) return;
+  if(PENDING.length){
+    el.textContent=`⚠ 未送信 ${PENDING.length}件（自動再送中）`;
+    el.style.color="#B26A00";
+  } else if(REMOTE && LAST_SYNC){
+    const s=Math.round((Date.now()-LAST_SYNC)/1000);
+    const ago=s<15?"たった今":s<60?`${s}秒前に`:s<3600?`${Math.floor(s/60)}分前に`:`${Math.floor(s/3600)}時間前に`;
+    el.textContent=`✓ ${ago}同期`;
+    el.style.color="#9AA5B1";
+  } else {
+    el.textContent="";
+  }
+}
+setInterval(updateSyncState, 15000);
+
+async function reloadData(){
+  if(!REMOTE){ render(); notify("最新の状態です"); return; }
+  if(PENDING.length){ notify("未送信のデータを再送しています。送信完了後に更新してください", true); flushQueue(); return; }
+  try{
+    const r = await fetch(`${CONFIG.gasUrl}?action=all`);
+    const data = await r.json();
+    S = { events:data.events||[], tasks:data.tasks||[], notes:data.notes||[], adjustments:data.adjustments||[], members:data.members||[] };
+    cacheNow();
+    render();
+    notify("最新の状態に更新しました");
+  }catch(e){
+    notify("データの取得に失敗しました。通信環境をご確認ください", true);
+  }
+}
+
+// ===== バックグラウンド自動同期（30秒ごと＋ウィンドウ復帰時） =====
+function formIsOpen(){
+  return !!(appUI.ev||appUI.task||appUI.adj||appUI.note||appUI.resp!==null&&appUI.resp!==undefined&&appUI.resp) || !!document.querySelector(".overlay");
+}
+let pendingRender=false;
+async function autoSync(){
+  if(!REMOTE || document.visibilityState!=="visible") return;
+  if(PENDING.length){ flushQueue(); return; } // 未送信データがある間はサーバー内容で上書きしない
+  try{
+    const r = await fetch(`${CONFIG.gasUrl}?action=all`);
+    const data = await r.json();
+    const next = { events:data.events||[], tasks:data.tasks||[], notes:data.notes||[], adjustments:data.adjustments||[], members:data.members||[] };
+    cacheNow();
+    if(JSON.stringify(next)!==JSON.stringify(S)){
+      S = next;
+      // 入力中のフォームを消さないため、フォームが開いている間は再描画を保留
+      if(!formIsOpen()) render();
+      else pendingRender=true;
+    } else if(pendingRender && !formIsOpen()){
+      pendingRender=false; render();
+    }
+  }catch(e){ /* 一時的な通信エラーは静かにスキップし、次回の同期で回復 */ }
+}
+setInterval(autoSync, 30000);
+window.addEventListener("focus", autoSync);
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible") autoSync(); });
+
+function resetLocalData(){
+  if(!confirm("このPCに保存されたすべての入力データ（予定・タスク・議事録・日程調整・名前）を消去します。よろしいですか？")) return;
+  localStorage.removeItem(KEY);
+  localStorage.removeItem("workhub_user");
+  location.reload();
+}
+
+async function boot(){
+  { const h=location.hash.slice(1); if(["adjust","schedule","tasks","notes"].includes(h)) tab=h; }
+  if(REMOTE){
+    try{
+      const r = await fetch(`${CONFIG.gasUrl}?action=all`);
+      const data = await r.json();
+      S = { events:data.events||[], tasks:data.tasks||[], notes:data.notes||[], adjustments:data.adjustments||[], members:data.members||[] };
+      cacheNow();
+    }catch(e){
+      // 通信不可：直近の取得キャッシュがあれば閲覧＋オフライン編集モードで継続
+      let cached=null;
+      try{ cached=JSON.parse(localStorage.getItem(KEY)); }catch(_){}
+      if(cached && (cached.events||cached.tasks||cached.notes||cached.adjustments)){
+        S = { events:cached.events||[], tasks:cached.tasks||[], notes:cached.notes||[], adjustments:cached.adjustments||[], members:cached.members||[] };
+        const ts=+localStorage.getItem("workhub_cache_time")||0;
+        const when=ts?new Date(ts).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}):"";
+        document.getElementById("demoBar").innerHTML =
+          `<div class="demo" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+            <span>⚠ サーバーに接続できないため、${when?`${when}時点の`:""}保存済みデータを表示しています。この間に行った変更は、接続が回復すると自動で送信されます。</span>
+            <button onclick="location.reload()" style="border:1px solid #C99A4B;background:#fff;color:#9A6A1F;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0">再接続</button>
+          </div>`;
+      } else {
+        document.getElementById("main").innerHTML =
+          `<div class="empty">データの読み込みに失敗しました。<br>通信環境をご確認のうえ、ページを再読み込みしてください。</div>`;
+        return;
+      }
+    }
+  } else {
+    try{ S = JSON.parse(localStorage.getItem(KEY)) || S; }catch(e){}
+    document.getElementById("demoBar").innerHTML =
+      `<div class="demo" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <span>⚠ 現在「お試しモード」です（データはこのPC内のみに保存）。社内共有・回答URL機能を使うには、設置手順書に沿ってGASのURLを設定してください。</span>
+        <button onclick="resetLocalData()" style="border:1px solid #C99A4B;background:#fff;color:#9A6A1F;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0">入力データを消去</button>
+      </div>`;
+  }
+  if(!CURRENT_USER) showUserPicker(true);
+  else registerMember();
+  updateUserBtn();
+  render();
+}
+
+// 利用者を共有名簿に登録（共有先プルダウンの選択肢になる）
+function registerMember(){
+  if(!CURRENT_USER) return;
+  S.members = S.members||[];
+  if(!S.members.find(m=>m.name===CURRENT_USER)){
+    const m={id:CURRENT_USER, name:CURRENT_USER};
+    S.members.push(m);
+    persist("members", m);
+  }
+}
+// 登録済みメンバー名簿（名前登録した人のみ。ゲスト・データ上に現れるだけの名前は候補にしない）
+function rosterNames(includeSelf){
+  const set=new Set((S.members||[]).filter(m=>!m.guest).map(m=>m.name));
+  set.delete("");
+  if(!includeSelf) set.delete(CURRENT_USER);
+  return [...set].sort();
+}
+// ゲスト（社外の方）の名簿。日程調整の宛先でのみ選択可能
+function guestNames(){
+  const set=new Set((S.members||[]).filter(m=>m.guest).map(m=>m.name));
+  set.delete("");
+  return [...set].sort();
+}
+// ゲスト登録（日程調整の宛先欄から実行）：苗字＋社名で「田中（株式会社サンプル）」の形式で登録
+function registerGuest(){
+  const sei=document.getElementById("gf_sei").value.trim();
+  const com=document.getElementById("gf_com").value.trim();
+  if(!sei){ fieldError("gf_sei","ゲストの苗字を入力してください"); return; }
+  if(!com){ fieldError("gf_com","ゲストの社名を入力してください"); return; }
+  const name=`${sei}（${com}）`;
+  S.members=S.members||[];
+  if(S.members.find(m=>m.name===name)){ notify("同じ方がすでに登録されています", true); return; }
+  const m={id:"g_"+Date.now(), name, guest:true};
+  S.members.push(m);
+  persist("members", m);
+  captureForms();                       // 入力途中のフォーム値を退避
+  appUI.adj.partChecked=appUI.adj.partChecked||[];
+  appUI.adj.partChecked.push(name);     // 追加したゲストはチェック済みに
+  appUI.adj.gsei=""; appUI.adj.gcom=""; // ゲスト入力欄をクリア
+  appUI.adj._skipCapture=true;          // 直後のrenderでDOMから再取得して上書きしない
+  render();
+  notify(`ゲスト「${name}」を登録しました`);
+}
+// 共有先候補（自分以外・登録済みメンバーのみ）
+function memberNames(){ return rosterNames(false); }
+
+function updateUserBtn(){ const el=document.getElementById("userName"); if(el) el.textContent = CURRENT_USER||"−"; }
+
+// ===== メンバー・ゲストの管理 =====
+function openMemberManager(){
+  const ov=document.createElement("div");
+  ov.className="overlay";
+  const draw=()=>{
+    const ms=(S.members||[]).slice().sort((a,b)=>(a.guest?1:0)-(b.guest?1:0)||String(a.name).localeCompare(b.name,"ja"));
+    ov.innerHTML=`<div class="modal" style="max-width:480px">
+      <h2>メンバーの管理</h2>
+      <p>名簿の改名・削除・種別（社員／ゲスト）の切り替えができます。<br>※ 改名しても、既存の予定・タスク等に表示される作成者名・担当者名は変わりません。</p>
+      <div style="max-height:300px;overflow-y:auto;margin-bottom:14px">
+      ${ms.length===0?`<div class="note-small" style="color:#8A93A2">登録されているメンバーはいません</div>`:
+        ms.map(m=>`<div class="mrow">
+          <b>${esc(m.name)}${m.guest?`<span class="guesttag">ゲスト</span>`:""}${m.name===CURRENT_USER?` <span class="autotag">自分</span>`:""}</b>
+          <button class="mini" onclick="renameMember('${esc(String(m.id))}')">改名</button>
+          <button class="mini" onclick="toggleGuestFlag('${esc(String(m.id))}')">${m.guest?"社員にする":"ゲストにする"}</button>
+          <button class="mini" onclick="delMember('${esc(String(m.id))}')">削除</button>
+        </div>`).join("")}
+      </div>
+      <div class="seclabel">メンバーを追加</div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">
+        <select id="mm_kind" style="width:100px;margin-top:0;flex-shrink:0" onchange="const g=this.value==='g';document.getElementById('mm_a').placeholder=g?'苗字':'姓';document.getElementById('mm_b').placeholder=g?'社名':'名'">
+          <option value="">社員</option><option value="g">ゲスト</option></select>
+        <input id="mm_a" placeholder="姓" style="flex:1;margin-top:0">
+        <input id="mm_b" placeholder="名" style="flex:1.2;margin-top:0">
+        <button class="ghost" style="margin:0;flex-shrink:0" onclick="addMemberFromMgr()">追加</button>
+      </div>
+      <button class="ghost" style="width:100%" onclick="this.closest('.overlay').remove()">閉じる</button>
+    </div>`;
+  };
+  ov._draw=draw;
+  ov.id="memberMgr";
+  draw();
+  ov.addEventListener("click",e=>{ if(e.target===ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+function redrawMemberMgr(){ const ov=document.getElementById("memberMgr"); if(ov&&ov._draw) ov._draw(); }
+function findMember(id){ return (S.members||[]).find(m=>String(m.id)===String(id)); }
+function renameMember(id){
+  const m=findMember(id); if(!m) return;
+  const nv=prompt("新しい氏名を入力してください（姓と名の間に半角スペース）", m.name);
+  if(nv===null) return;
+  const name=nv.trim();
+  if(!name){ notify("氏名を入力してください", true); return; }
+  if((S.members||[]).some(x=>x.name===name&&String(x.id)!==String(id))){ notify("同じ名前がすでに登録されています", true); return; }
+  const wasSelf=m.name===CURRENT_USER;
+  m.name=name;
+  persist("members", m);
+  if(wasSelf){ CURRENT_USER=name; localStorage.setItem("workhub_user", name); updateUserBtn(); }
+  redrawMemberMgr(); render();
+  notify("氏名を変更しました");
+}
+function toggleGuestFlag(id){
+  const m=findMember(id); if(!m) return;
+  if(!m.guest && m.name===CURRENT_USER){ notify("自分自身をゲストにはできません", true); return; }
+  m.guest=!m.guest;
+  persist("members", m);
+  redrawMemberMgr(); render();
+  notify(m.guest?`「${m.name}」をゲストに変更しました`:`「${m.name}」を社員に変更しました`);
+}
+function delMember(id){
+  const m=findMember(id); if(!m) return;
+  if(m.name===CURRENT_USER){ notify("自分自身は削除できません", true); return; }
+  if(!confirm(`「${m.name}」を名簿から削除します。\n既存の予定・タスク・日程調整には影響しません。よろしいですか？`)) return;
+  S.members.splice(S.members.indexOf(m),1);
+  removeIt("members", m.id);
+  redrawMemberMgr(); render();
+  notify("名簿から削除しました");
+}
+function addMemberFromMgr(){
+  const a=document.getElementById("mm_a").value.trim();
+  const b=document.getElementById("mm_b").value.trim();
+  const guest=document.getElementById("mm_kind").value==="g";
+  if(!a||!b){ notify(guest?"苗字と社名の両方を入力してください":"姓と名の両方を入力してください", true); return; }
+  const name=guest?`${a}（${b}）`:`${a} ${b}`;
+  if((S.members||[]).some(x=>x.name===name)){ notify("同じ名前がすでに登録されています", true); return; }
+  const m={id:(guest?"g_":"m_")+Date.now(), name, guest};
+  S.members=S.members||[];
+  S.members.push(m);
+  persist("members", m);
+  redrawMemberMgr(); render();
+  notify(`「${name}」を${guest?"ゲスト":"社員"}として登録しました`);
+}
+
+function showUserPicker(first){
+  const ov = document.createElement("div");
+  ov.className = "overlay";
+  if(first) ov.dataset.must="1";
+  const parts = (CURRENT_USER||"").split(" ");
+  ov.innerHTML = `<div class="modal">
+    <h2>お名前を入力してください</h2>
+    <p>フルネームで入力してください。タスクの担当者や議事録の作成者として表示されます。${first?"（次回からは自動で表示されます）":""}</p>
+    <div class="row" style="margin-bottom:14px">
+      <label style="margin-bottom:0">姓<input id="up_sei" placeholder="例）山田" value="${esc(parts[0]||"")}"></label>
+      <label style="margin-bottom:0">名<input id="up_mei" placeholder="例）太郎" value="${esc(parts[1]||"")}"></label>
+    </div>
+    <button class="prim" id="up_start" style="width:100%">はじめる</button>
+    ${first?"":`<button class="ghost" id="up_mgr" style="width:100%;margin-top:8px">${ico("sliders",15)} メンバーの管理（改名・削除・ゲスト設定）</button>`}
+  </div>`;
+  const mgrBtn=ov.querySelector("#up_mgr");
+  if(mgrBtn) mgrBtn.addEventListener("click",()=>{ ov.remove(); openMemberManager(); });
+  ov.querySelector("#up_start").addEventListener("click", ()=>{
+    const sei = ov.querySelector("#up_sei").value.trim();
+    const mei = ov.querySelector("#up_mei").value.trim();
+    if(!sei || !mei){ notify("姓と名の両方を入力してください", true); return; }
+    CURRENT_USER = `${sei} ${mei}`;
+    localStorage.setItem("workhub_user", CURRENT_USER);
+    registerMember();
+    updateUserBtn();
+    ov.remove();
+    render();
+  });
+  document.body.appendChild(ov);
+}
+
+// ================= 状態 =================
+let tab="home";
+// ===== タブとURLハッシュの連動（ブラウザの「戻る」でタブを戻せる） =====
+const TABS=["home","adjust","schedule","tasks","notes"];
+function go(t){
+  tab=t;
+  if(location.hash!=="#"+t){ try{ history.pushState(null,"","#"+t); }catch(e){} }
+  render();
+}
+window.addEventListener("popstate", ()=>{
+  const h=location.hash.slice(1);
+  const next=TABS.includes(h)?h:"home";
+  if(next!==tab){ tab=next; render(); }
+});
+let viewMonth={y:T.getFullYear(), m:T.getMonth()};
+let selDate=toISO(T);
+let openAdj=null, openNote=null;
+let appUI={ev:null, task:null, adj:null, note:null, resp:null};
+// ===== 検索・絞り込み状態 =====
+let FLT={taskQ:"", taskWho:"", noteQ:"", adjQ:"", showDone:false};
+const hitQ=(q,...fields)=>{ q=(q||"").trim().toLowerCase(); if(!q) return true; return fields.some(f=>String(f||"").toLowerCase().includes(q)); };
+
+// ===== 新着回答の既読管理（この端末ごと） =====
+const SEEN_KEY="workhub_seen_resp";
+function seenResp(){ try{ return JSON.parse(localStorage.getItem(SEEN_KEY))||{}; }catch(e){ return {}; } }
+function unseenOf(adj){ return Math.max(0,(adj.responses||[]).length-(seenResp()[adj.id]||0)); }
+function unseenRespCount(){ return visAdjs().reduce((s,a)=>s+unseenOf(a),0); }
+function markRespSeen(adj){
+  const seen=seenResp(); const n=(adj.responses||[]).length;
+  if((seen[adj.id]||0)!==n){ seen[adj.id]=n; try{ localStorage.setItem(SEEN_KEY,JSON.stringify(seen)); }catch(e){} }
+}
+
+function notify(msg, warn){
+  document.querySelectorAll(".toast").forEach(t=>t.remove());
+  const el=document.createElement("div");
+  el.className="toast"+(warn?" warn":""); el.textContent=(warn?"⚠ ":"✓ ")+msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), warn?6000:4000);
+}
+
+// ===== モーダル共通：Escキー・背景クリックで閉じる（初回の名前登録など必須モーダルは除く） =====
+document.addEventListener("keydown", e=>{
+  if(e.key!=="Escape") return;
+  const ovs=[...document.querySelectorAll(".overlay")].filter(o=>!o.dataset.must);
+  if(ovs.length){ ovs[ovs.length-1].remove(); }
+});
+document.addEventListener("click", e=>{
+  if(e.target.classList && e.target.classList.contains("overlay") && !e.target.dataset.must){
+    e.target.remove();
+  }
+});
+
+function eventsByDate(){
+  const map={};
+  visEvents().forEach(e=>(map[e.date]=map[e.date]||[]).push(e));
+  Object.values(map).forEach(l=>l.sort((a,b)=>(a.start||"").localeCompare(b.start||"")));
+  return map;
+}
+
+// ================= 共有制御 =================
+// 表示ルール：自分が作成した / 共有ONにされた / 自分が担当者、のいずれかなら見える
+function canSee(it){
+  // 議事録から登録されたタスクは、担当者本人の画面にのみ表示する
+  if(it.from==="note" && it.assignee) return it.assignee===CURRENT_USER;
+  if(!it.createdBy) return true;                 // 旧データは全員に表示（互換）
+  if(it.createdBy===CURRENT_USER) return true;   // 自分が作成
+  const mode = it.shareMode!==undefined ? it.shareMode : (it.shared ? "all" : "none");
+  if(mode==="all") return true;                          // 全員に共有
+  if(mode==="select" && (it.shareWith||[]).includes(CURRENT_USER)) return true; // 選ばれた人
+  if(it.assignee && it.assignee===CURRENT_USER) return true; // 自分が担当
+  if((it.participants||[]).includes(CURRENT_USER)) return true; // 会議の参加者（議事録は出席者に自動共有）
+  return false;
+}
+function visEvents(){ return S.events.filter(canSee); }
+function visTasks(){ return S.tasks.filter(canSee); }
+function visNotes(){ return S.notes.filter(canSee); }
+function visAdjs(){ return S.adjustments.filter(canSee); }
+function shareTag(it){
+  const mode = it.shareMode!==undefined ? it.shareMode : (it.shared ? "all" : "none");
+  if(mode==="all") return `<span class="autotag">共有:全員</span>`;
+  if(mode==="select") return `<span class="autotag">共有:${esc((it.shareWith||[]).join("、"))}</span>`;
+  return "";
+}
+// 共有範囲の入力部品：モード選択＋「選んだ人」で複数チェックボックス
+function shareControlHtml(prefix, defMode, defWith){
+  const names=memberNames();
+  const mode=defMode||"none";
+  const withArr=defWith||[];
+  return `<label>共有範囲
+    <select id="${prefix}_mode" onchange="toggleShareList('${prefix}')">
+      <option value="none" ${mode==="none"?"selected":""}>自分のみ</option>
+      <option value="all" ${mode==="all"?"selected":""}>全員</option>
+      <option value="select" ${mode==="select"?"selected":""}>選んだ人にだけ共有</option>
+    </select></label>
+  <div id="${prefix}_sharewho" class="share-who" style="${mode==="select"?"":"display:none"}">
+    ${names.length===0
+      ?`<div class="note-small" style="margin:0">個人を選んで共有するには、相手が一度WorkHubを開いて名前登録している必要があります。</div>`
+      :`<div class="note-small" style="margin:0 0 8px">共有する相手にチェック（複数選択できます）</div>`+
+        names.map(n=>`<label class="share-chk"><input type="checkbox" class="${prefix}_chk" value="${esc(n)}" ${withArr.includes(n)?"checked":""}>${esc(n)}</label>`).join("")}
+  </div>`;
+}
+function toggleShareList(prefix){
+  const v=document.getElementById(prefix+"_mode").value;
+  const who=document.getElementById(prefix+"_sharewho");
+  if(who) who.style.display = v==="select" ? "" : "none";
+}
+function readShare(prefix){
+  const v=document.getElementById(prefix+"_mode").value;
+  if(v==="none"||v==="all") return {shareMode:v, shareWith:[]};
+  const withArr=[...document.querySelectorAll("."+prefix+"_chk:checked")].map(c=>c.value);
+  if(withArr.length===0) return {shareMode:"none", shareWith:[]}; // 誰も選ばれていなければ自分のみ
+  return {shareMode:"select", shareWith:withArr};
+}
+// 作成後の共有設定変更（モーダル）
+function openShareEditor(type,id){
+  const list={events:S.events,tasks:S.tasks,notes:S.notes,adjustments:S.adjustments}[type];
+  const it=list.find(x=>x.id===id);
+  if(it.createdBy && it.createdBy!==CURRENT_USER){ notify("共有設定を変更できるのは作成者のみです", true); return; }
+  const mode = it.shareMode!==undefined ? it.shareMode : (it.shared ? "all" : "none");
+  const ov=document.createElement("div");
+  ov.className="overlay";
+  ov.innerHTML=`<div class="modal"><h2>共有設定</h2><p>「${esc(it.title)}」を誰に共有しますか？</p>
+    ${shareControlHtml("se", mode, it.shareWith||[])}
+    <div style="display:flex;gap:10px">
+      <button class="prim" id="se_save">保存</button>
+      <button class="ghost" id="se_cancel">キャンセル</button></div></div>`;
+  ov.querySelector("#se_save").addEventListener("click",()=>{
+    const sh=readShare("se");
+    it.shareMode=sh.shareMode; it.shareWith=sh.shareWith; it.shared=(sh.shareMode!=="none");
+    persist(type,it); ov.remove(); render();
+    notify(sh.shareMode==="all"?"全員に共有しました":sh.shareMode==="select"?`${sh.shareWith.length}名に共有しました`:"自分のみ表示にしました");
+  });
+  ov.querySelector("#se_cancel").addEventListener("click",()=>ov.remove());
+  document.body.appendChild(ov);
+}
+
+// ================= 連動 =================
+function openConfirmModal(adjId,candId){
+  const adj=S.adjustments.find(a=>a.id===adjId);
+  const c=adj.candidates.find(x=>x.id===candId);
+  const ov=document.createElement("div");
+  ov.className="overlay";
+  ov.innerHTML=`<div class="modal"><h2>日程の確定</h2>
+    <p>「${esc(adj.title)}」を <b>${fmtMD(c.date)} ${c.time}</b> で確定します。<br>会議URLや場所を入力すると、回答ページが確定案内に変わり、相手はそこから会議情報とカレンダー登録を確認できます。</p>
+    <label>会議URL・場所（任意）<input id="cf_url" placeholder="例）https://meet.google.com/xxx-xxxx-xxx"></label>
+    <div style="display:flex;gap:10px">
+      <button class="prim" id="cf_ok">確定する</button>
+      <button class="ghost" id="cf_cancel">キャンセル</button></div></div>`;
+  ov.querySelector("#cf_ok").addEventListener("click",()=>{
+    const url=ov.querySelector("#cf_url").value.trim();
+    ov.remove();
+    confirmCandidate(adjId,candId,url);
+  });
+  ov.querySelector("#cf_cancel").addEventListener("click",()=>ov.remove());
+  document.body.appendChild(ov);
+}
+
+function confirmCandidate(adjId,candId,meetUrl){
+  const adj=S.adjustments.find(a=>a.id===adjId);
+  const c=adj.candidates.find(x=>x.id===candId);
+  const [h,m]=c.time.split(":").map(Number);
+  const mins=h*60+m+adj.duration;
+  const end=`${pad(Math.floor(mins/60)%24)}:${pad(mins%60)}`;
+  const ev={id:uid(), title:adj.title, date:c.date, start:c.time, end, place:meetUrl||"", auto:true,
+    createdBy:CURRENT_USER, shareMode:"none", shareWith:[], shared:false};
+  S.events.push(ev);
+  adj.status="確定"; adj.confirmed=`${fmtMD(c.date)} ${c.time}`;
+  adj.confirmedDate=c.date; adj.confirmedTime=c.time; adj.confirmedEnd=end; adj.meetUrl=meetUrl||"";
+  adj.eventId=ev.id;
+  persist("events", ev); persist("adjustments", adj);
+  selDate=c.date;
+  const d=new Date(c.date+"T00:00:00");
+  viewMonth={y:d.getFullYear(), m:d.getMonth()};
+  render();
+  notify(`「${adj.title}」を確定し、スケジュールに自動登録しました`);
+}
+
+// 確定の取り消し（再調整に戻す）：自動登録された予定も削除する
+function reopenAdj(id){
+  const adj=S.adjustments.find(a=>a.id===id);
+  if(!adj || adj.status!=="確定") return;
+  if(adj.createdBy && adj.createdBy!==CURRENT_USER){ notify("再調整に戻せるのは作成者のみです", true); return; }
+  if(!confirm(`「${adj.title}」の確定を取り消して再調整に戻します。\n自動登録されたスケジュールの予定も削除されます。よろしいですか？`)) return;
+  let ev=adj.eventId ? S.events.find(e=>e.id===adj.eventId) : null;
+  if(!ev) ev=S.events.find(e=>e.auto && e.title===adj.title && e.date===adj.confirmedDate && e.start===adj.confirmedTime);
+  if(ev){ S.events.splice(S.events.indexOf(ev),1); removeIt("events", ev.id); }
+  adj.status="調整中";
+  adj.confirmed=""; adj.confirmedDate=""; adj.confirmedTime=""; adj.confirmedEnd=""; adj.meetUrl=""; adj.eventId="";
+  persist("adjustments", adj);
+  openAdj=id; render();
+  notify("再調整に戻しました。回答用URLは再び回答ページとして機能します");
+}
+
+function createNoteFromEvent(evId){
+  const ev=S.events.find(e=>e.id===evId);
+  appUI.note={title:`${ev.title} 議事録`, date:ev.date, start:ev.start||"", end:ev.end||"", todos:[{}]};
+  go("notes");
+}
+
+function saveNote(){
+  const title=document.getElementById("nf_title").value.trim();
+  if(!title){ fieldError("nf_title","タイトルを入力してください"); return; }
+  const date=document.getElementById("nf_date").value||toISO(T);
+  const start=document.getElementById("nf_start").value;
+  const end=document.getElementById("nf_end").value;
+  const decisions=document.getElementById("nf_dec").value.trim();
+  const memo=document.getElementById("nf_memo").value.trim();
+  const participants=noteParticipants();
+  const todos=[];
+  document.querySelectorAll("#nf_todos .todo-line").forEach(line=>{
+    const ti=line.querySelector(".td-text");
+    const di=line.querySelector(".td-due");
+    const wi=line.querySelector(".td-who");
+    if(ti&&ti.value.trim()) todos.push({text:ti.value.trim(), due:di.value, who:(wi&&wi.value)||CURRENT_USER, tid:line.dataset.tid||null});
+  });
+  const shN=readShare("nf");
+  rememberShareDef("note", shN.shareMode);
+  const eid=appUI.note&&appUI.note.editId;
+  let note;
+  if(eid){
+    note=S.notes.find(x=>x.id===eid);
+    if(!note){ appUI.note=null; render(); return; }
+    if(!conflictOk(note, appUI.note.baseUpdatedAt, "議事録")) return;
+    Object.assign(note,{title, date, start, end, decisions, memo, participants,
+      shareMode:shN.shareMode, shareWith:shN.shareWith, shared:shN.shareMode!=="none"});
+  } else {
+    note={id:uid(), title, date, start, end, decisions, memo, participants, author:CURRENT_USER,
+      createdBy:CURRENT_USER, shareMode:shN.shareMode, shareWith:shN.shareWith, shared:shN.shareMode!=="none"};
+    S.notes.unshift(note);
+  }
+  // 新しいToDo（タスク未登録の行）のみタスクへ登録する
+  let newTasks=0;
+  todos.forEach((t,i)=>{
+    if(t.tid) return;
+    const task={id:uid(), title:t.text, due:t.due||addDays(T,7),
+      alert:t.due?addDays(t.due,-7):toISO(T), memo:`「${title}」より自動登録`, done:false, from:"note", assignee:t.who,
+      createdBy:CURRENT_USER, shared:false};
+    S.tasks.push(task);
+    persist("tasks", task);
+    t.tid=task.id;
+    newTasks++;
+  });
+  note.todos=todos.map(t=>({text:t.text, due:t.due, who:t.who, tid:t.tid}));
+  persist("notes", note);
+  appUI.note=null; openNote=note.id;
+  render();
+  notify(eid
+    ? (newTasks>0?`議事録を更新し、新しいToDo ${newTasks}件をタスクに登録しました`:"議事録を更新しました")
+    : (newTasks>0?`議事録を保存し、ToDo ${newTasks}件を担当者のタスクに自動登録しました`:"議事録を保存しました"));
+}
+function editNote(id){
+  const n=S.notes.find(x=>x.id===id); if(!n) return;
+  if(n.createdBy && n.createdBy!==CURRENT_USER){ notify("編集できるのは作成者のみです", true); return; }
+  appUI.note={editId:id, baseUpdatedAt:n.updatedAt||0, title:n.title, date:n.date, start:n.start||"", end:n.end||"",
+    participants:[...(n.participants||[])], decisions:n.decisions||"", memo:n.memo||"",
+    todos:(n.todos||[]).map(t=>({text:t.text, due:t.due||"", who:t.who||"", tid:t.tid||"legacy"})),
+    share:{shareMode:n.shareMode!==undefined?n.shareMode:(n.shared?"all":"none"), shareWith:n.shareWith||[]}};
+  if(appUI.note.todos.length===0) appUI.note.todos=[{}];
+  appUI.note._skipCapture=true;
+  go("notes");
+  setTimeout(()=>{const f=document.querySelector(".form"); if(f) f.scrollIntoView({behavior:"smooth",block:"center"});},60);
+}
+
+// ================= 日程調整部品 =================
+function timeSelectHtml(sel){
+  let opts="";
+  for(let h=0;h<24;h++) for(let m=0;m<60;m+=10){
+    const v=`${pad(h)}:${pad(m)}`;
+    opts+=`<option value="${v}" ${v===(sel||"10:00")?"selected":""}>${v}</option>`;
+  }
+  return `<select class="tsel" style="margin-top:0;width:120px">${opts}</select>`;
+}
+// 予定用：未指定（終日）も選べる10分単位セレクト
+function clockSelectHtml(id, sel){
+  let opts=`<option value="">--:--</option>`;
+  for(let h=0;h<24;h++) for(let m=0;m<60;m+=10){
+    const v=`${pad(h)}:${pad(m)}`;
+    opts+=`<option value="${v}" ${v===sel?"selected":""}>${v}</option>`;
+  }
+  return `<select id="${id}">${opts}</select>`;
+}
+// 議事録用：参加者の取得とToDo行（担当セレクトつき）
+function noteParticipants(){
+  return [...document.querySelectorAll(".nf_part_chk:checked")].map(c=>c.value);
+}
+function notePartChecklistHtml(def){
+  const names=rosterNames(true); // 自分を含む名簿
+  let checked;
+  if(Array.isArray(def)) checked=def;
+  else if(typeof def==="string") checked=def.split(/[,、，]/).map(s=>s.trim()).filter(Boolean);
+  else checked=[CURRENT_USER];
+  return `<div class="share-who" id="nf_part">
+    <div class="note-small" style="margin:0 0 8px">参加者にチェック（名前登録済みのメンバーのみ表示されます）</div>
+    ${names.map(n=>`<label class="share-chk"><input type="checkbox" class="nf_part_chk" value="${esc(n)}" ${checked.includes(n)?"checked":""} onchange="refreshTodoWho()">${esc(n)}</label>`).join("")}
+  </div>`;
+}
+function todoWhoOptions(selected){
+  const live=document.querySelectorAll(".nf_part_chk").length>0;
+  let ps=live?noteParticipants():((appUI.note&&appUI.note.participants)||[]);
+  if(selected && !ps.includes(selected)) ps=[...ps, selected];
+  return `<option value="">担当を選択</option>`+ps.map(p=>`<option ${p===selected?"selected":""}>${escAttr(p)}</option>`).join("");
+}
+function escAttr(s){ return esc(s); }
+function todoLineHtml(t){
+  t=t||{};
+  return `<div class="todo-line" data-tid="${t.tid?esc(String(t.tid)):""}"><input class="td-text" value="${esc(t.text||"")}" placeholder="やること" style="flex:1;margin-top:0">`+
+    `<input type="date" class="td-due" value="${t.due||""}" style="width:150px;margin-top:0">`+
+    `<select class="td-who" style="width:150px;margin-top:0">${todoWhoOptions(t.who||"")}</select></div>`;
+}
+function addTodoLine(){ document.getElementById("nf_todos").insertAdjacentHTML("beforeend", todoLineHtml()); }
+
+// 議事録のPDF出力（印刷ダイアログから「PDFとして保存」）
+function printNote(id){
+  const n=S.notes.find(x=>x.id===id); if(!n) return;
+  const w=window.open("","_blank");
+  if(!w){ notify("ポップアップがブロックされました。ブラウザの設定でこのサイトのポップアップを許可してください", true); return; }
+  const sec=(label,body)=>body?`<div class="sl">${label}</div><div class="sb">${body}</div>`:"";
+  const todosHtml=(n.todos||[]).map(td=>`<div class="td">・${esc(td.text)}${td.who?`　<span class="w">担当：${esc(td.who)}</span>`:""}${td.due?`　<span class="w">期日：${fmtMD(td.due)}</span>`:""}</div>`).join("");
+  w.document.write(`<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><link rel="icon" type="image/png" href="./favicon.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#0AB1B6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WorkHub">
+<title>${esc(n.title)}</title>
+  <style>
+    body{margin:0;padding:40px 48px;color:#1C242C;font-size:14px;line-height:1.9;
+      font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",Meiryo,sans-serif;}
+    h1{font-size:22px;margin:0 0 4px;display:flex;align-items:center;gap:10px;}
+    h1::before{content:"";width:10px;height:24px;border-radius:5px;background:linear-gradient(180deg,#0AB1B6,#078F93);}
+    .meta{color:#5B6675;font-size:13px;margin-bottom:22px;padding-bottom:14px;border-bottom:2px solid #0AB1B6;}
+    .sl{font-size:12px;font-weight:800;color:#078F93;letter-spacing:.08em;margin:18px 0 4px;}
+    .sb{white-space:pre-wrap;border:1px solid #E4E8EC;border-radius:8px;padding:10px 14px;}
+    .td{padding:2px 0;} .w{color:#5B6675;font-size:12px;}
+    .foot{margin-top:32px;color:#AEB7C0;font-size:11px;text-align:center;}
+    .pbtn{position:fixed;top:14px;right:14px;background:#0AB1B6;color:#fff;border:0;border-radius:8px;
+      padding:10px 18px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+    @media print{.pbtn{display:none;} body{padding:0;}}
+  </style></head><body>
+  <button class="pbtn" onclick="window.print()">印刷 / PDF保存</button>
+  <h1>${esc(n.title)}</h1>
+  <div class="meta">日時：${n.date}${n.start?` ${n.start}${n.end?`〜${n.end}`:""}`:""}${n.author?`　｜　作成者：${esc(n.author)}`:""}</div>
+  ${sec("参加者",(n.participants||[]).map(esc).join("、"))}
+  ${sec("決定事項",esc(n.decisions||""))}
+  ${todosHtml?`<div class="sl">ToDo</div><div class="sb">${todosHtml}</div>`:""}
+  ${sec("メモ",esc(n.memo||""))}
+  <div class="foot">WorkHub ｜ Powered by Kiasu Co., Ltd.</div>
+  </body></html>`);
+  w.document.close();
+  setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){} }, 400);
+}
+function refreshTodoWho(){
+  document.querySelectorAll("#nf_todos .td-who").forEach(sel=>{
+    const cur=sel.value;
+    sel.innerHTML=todoWhoOptions(cur);
+  });
+}
+function candRowHtml(c){
+  c=c||{};
+  return `<div class="todo-line cand-line" data-cid="${esc(c.cid||"")}"><input type="date" value="${c.date||""}" style="margin-top:0;flex:1">${timeSelectHtml(c.time)}</div>`;
+}
+function addCandRow(){
+  const lines=[...document.querySelectorAll("#af_cands .cand-line")];
+  let prevDate="";
+  for(let i=lines.length-1;i>=0;i--){
+    const v=lines[i].querySelector("input").value;
+    if(v){ prevDate=v; break; }
+  }
+  document.getElementById('af_cands').insertAdjacentHTML('beforeend', candRowHtml({date:prevDate}));
+}
+function partChecklistHtml(){
+  const names=rosterNames(false);
+  const guests=guestNames();
+  const checked=(appUI.adj&&appUI.adj.partChecked)||[];
+  const chk=n=>checked.includes(n)?"checked":"";
+  // 旧データ等で名簿にない宛先が既に設定されている場合も、チェックが外れないよう表示する
+  const extra=checked.filter(n=>!names.includes(n)&&!guests.includes(n));
+  let html=`<div class="share-who" id="af_parts">
+    <div class="note-small" style="margin:0 0 8px">回答してもらう相手にチェック（複数選択できます）</div>
+    ${names.length===0&&guests.length===0&&extra.length===0?`<div class="note-small" style="margin:0">まだ選べる相手がいません。社内の方には一度WorkHubを開いて名前登録してもらうか、下の欄から社外の方をゲストとして追加してください。</div>`:""}
+    ${names.map(n=>`<label class="share-chk"><input type="checkbox" class="af_part_chk" value="${esc(n)}" ${chk(n)}>${esc(n)}</label>`).join("")}
+    ${guests.map(n=>`<label class="share-chk"><input type="checkbox" class="af_part_chk" value="${esc(n)}" ${chk(n)}>${esc(n)}<span class="guesttag">ゲスト</span></label>`).join("")}
+    ${extra.map(n=>`<label class="share-chk"><input type="checkbox" class="af_part_chk" value="${esc(n)}" checked>${esc(n)}</label>`).join("")}
+  </div>
+  <div class="guest-add">
+    <div class="note-small" style="margin:0 0 6px">社外の方（ゲスト）を追加 — ゲストは日程調整の宛先としてのみ選択できます</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input id="gf_sei" value="${esc((appUI.adj&&appUI.adj.gsei)||"")}" placeholder="苗字（例）田中" style="flex:1;margin-top:0">
+      <input id="gf_com" value="${esc((appUI.adj&&appUI.adj.gcom)||"")}" placeholder="社名（例）株式会社サンプル" style="flex:1.4;margin-top:0">
+      <button class="ghost" style="margin:0;flex-shrink:0" onclick="registerGuest()">＋ 追加</button>
+    </div>
+  </div>`;
+  return html;
+}
+
+function answerUrlOf(adj){
+  if(!CONFIG.answerUrl) return "";
+  return `${CONFIG.answerUrl}${CONFIG.answerUrl.includes("?")?"&":"?"}id=${adj.id}`;
+}
+function copyUrl(adjId){
+  const adj=S.adjustments.find(a=>a.id===adjId);
+  copyText(answerUrlOf(adj));
+}
+function copyText(text){
+  const done=()=>notify("コピーしました。そのままLINEやメールに貼り付けられます");
+  if(navigator.clipboard){ navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text,done)); }
+  else fallbackCopy(text,done);
+}
+// 依頼文つきコピー（件名・候補一覧・URLをまとめた定型文）
+function copyInvite(adjId){
+  const adj=S.adjustments.find(a=>a.id===adjId); if(!adj) return;
+  const cands=(adj.candidates||[]).map(c=>`・${fmtMD(c.date)} ${c.time}〜（${adj.duration}分）`).join("\n");
+  copyText(`【日程調整のお願い】${adj.title}\nお世話になっております。\n下記の候補からご都合のよい日時をご回答いただけますでしょうか。\n\n▼候補日時\n${cands}\n\n▼ご回答はこちら（タップで開けます）\n${answerUrlOf(adj)}`);
+}
+// 確定案内文つきコピー
+function copyConfirmMsg(adjId){
+  const adj=S.adjustments.find(a=>a.id===adjId); if(!adj) return;
+  copyText(`【日程確定のご連絡】${adj.title}\nご回答ありがとうございました。\n下記の日時に確定いたしましたので、ご案内いたします。\n\n▼確定日時\n${adj.confirmed}（${adj.duration}分）${adj.meetUrl?`\n\n▼会議URL・場所\n${adj.meetUrl}`:""}\n\n▼詳細・カレンダー登録はこちら\n${answerUrlOf(adj)}`);
+}
+function fallbackCopy(text,done){
+  const ta=document.createElement("textarea");
+  ta.value=text; document.body.appendChild(ta); ta.select();
+  document.execCommand("copy"); document.body.removeChild(ta); done();
+}
+
+function saveResp(adjId){
+  const name=document.getElementById("rf_name").value.trim();
+  if(!name){ fieldError("rf_name","回答者名を入力してください"); return; }
+  const answers={};
+  document.querySelectorAll(".rf_ans").forEach(s=>{ answers[s.dataset.cid]=s.value; });
+  const adj=S.adjustments.find(a=>a.id===adjId);
+  adj.responses=(adj.responses||[]).filter(r=>r.name!==name);
+  adj.responses.push({name, answers});
+  persist("adjustments", adj);
+  appUI.resp=null; appUI.respName=""; appUI.respAns=null; render();
+  notify(`${name} の回答を記録しました`);
+}
+
+// ================= 共通部品 =================
+function tasksByDate(){
+  const map={};
+  visTasks().filter(t=>!t.done).forEach(t=>(map[t.due]=map[t.due]||[]).push(t));
+  return map;
+}
+
+function calPanelHtml(compact){
+  const first=new Date(viewMonth.y,viewMonth.m,1);
+  const last=new Date(viewMonth.y,viewMonth.m+1,0).getDate();
+  const byDate=eventsByDate();
+  const tByDate=tasksByDate();
+  let cal="";
+  WD.forEach((w,i)=>cal+=`<div class="calw ${i===0?"sun":i===6?"sat":""}">${w}</div>`);
+  for(let i=0;i<first.getDay();i++) cal+=`<div></div>`;
+  for(let d=1;d<=last;d++){
+    const iso=toISO(new Date(viewMonth.y,viewMonth.m,d));
+    const wd=(first.getDay()+d-1)%7;
+    const hol=HOLIDAYS[iso];
+    const evs=byDate[iso]||[];
+    const tks=tByDate[iso]||[];
+    const dots=[...evs.map(()=>"ev"),...tks.map(()=>"tk")].slice(0,3);
+    let lines="";
+    if(!compact){
+      const items=[...evs.map(e=>({c:"",t:(e.start?e.start+" ":"")+e.title})),...tks.map(t=>({c:"tk",t:"〆 "+t.title}))];
+      const shown=items.slice(0,2);
+      const rest=items.length-shown.length;
+      if(items.length) lines=`<span class="evlines">${shown.map(it=>`<span class="evline ${it.c}">${esc(it.t)}</span>`).join("")}${rest>0?`<span class="evline more">+${rest}件</span>`:""}</span>`;
+    }
+    cal+=`<button class="cell ${iso===toISO(T)?"today":""} ${iso===selDate?"sel":""}" ${hol?`title="${esc(hol)}"`:""} onclick="selDate='${iso}';render()">
+      <span class="${hol?"dhol":wd===0?"dsun":wd===6?"dsat":""}">${d}</span>${hol&&!compact?`<span class="holname">${esc(hol)}</span>`:""}${dots.length>0?`<span class="dots">${dots.map(k=>`<span class="dot" style="${k==="tk"?"background:#E8A23D":""}"></span>`).join("")}</span>`:""}${lines}</button>`;
+  }
+  let html=`<div class="calhead">
+    <button class="arr" onclick="viewMonth.m===0?(viewMonth={y:viewMonth.y-1,m:11}):(viewMonth.m--);render()">‹</button>
+    <b>${viewMonth.y}年 ${viewMonth.m+1}月</b>
+    <span style="display:flex;gap:6px">
+      <button class="arr" onclick="viewMonth.m===11?(viewMonth={y:viewMonth.y+1,m:0}):(viewMonth.m++);render()">›</button>
+      <button class="todaybtn" onclick="viewMonth={y:T.getFullYear(),m:T.getMonth()};selDate=toISO(T);render()">今日</button>
+    </span>
+  </div><div class="cal ${compact?"":"full"}">${cal}</div>`;
+  const dayEvents=byDate[selDate]||[];
+  const dayTasks=tByDate[selDate]||[];
+  if(compact){
+    html+=`<div class="dayhead"><b>${fmtMD(selDate)} の予定</b></div>`;
+    if(dayEvents.length===0 && dayTasks.length===0) html+=`<div class="empty" style="padding:16px;font-size:14px">予定はありません</div>`;
+    dayEvents.forEach(e=>{
+      html+=`<div class="ev" style="padding:11px 13px"><div class="time">${e.start||"終日"}</div>
+        <div class="body"><div class="name" style="font-size:15px">${esc(e.title)}${e.auto?`<span class="autotag">自動</span>`:""}</div></div></div>`;
+    });
+    dayTasks.forEach(t=>{
+      html+=`<div class="ev" style="padding:11px 13px;cursor:pointer" onclick="go('tasks')"><div class="time" style="color:#D96C30">〆切</div>
+        <div class="body"><div class="name" style="font-size:15px">${esc(t.title)}${t.assignee?`<span class="whotag">${esc(t.assignee)}</span>`:""}</div></div></div>`;
+    });
+  }
+  return html;
+}
+
+function upcomingSideHtml(){
+  const upcoming=visEvents().filter(e=>daysUntil(e.date)>=0).sort((a,b)=>(a.date+(a.start||"")).localeCompare(b.date+(b.start||""))).slice(0,6);
+  const nearTasks=visTasks().filter(t=>!t.done).sort((a,b)=>new Date(a.due)-new Date(b.due)).slice(0,6);
+  return `
+    <div class="sh">${ico("clock",15)} 直近の予定</div>
+    <div class="panel" style="padding:14px 16px;margin-bottom:16px">
+      ${upcoming.length===0?`<div style="font-size:14px;color:var(--gray)">予定はありません</div>`:
+        upcoming.map(e=>`<div class="srow" style="font-size:15px"><span class="pill" style="font-size:13px">${fmtMD(e.date)}</span>
+          <b>${esc(e.title)}</b><span class="sub">${e.start||""}</span></div>`).join("")}
+    </div>
+    <div class="sh">${ico("tasks",15)} 期日が近いタスク</div>
+    <div class="panel" style="padding:14px 16px;margin-bottom:0">
+      ${nearTasks.length===0?`<div style="font-size:14px;color:var(--gray)">タスクはありません</div>`:
+        nearTasks.map(t=>{const [text,bg,color]=dueBadge(t);
+          return `<div class="srow" style="font-size:15px;cursor:pointer" onclick="go('tasks')">
+            <span class="badge" style="background:${bg};color:${color};margin-top:0;font-size:12px;padding:4px 9px">${text}</span>
+            <b>${esc(t.title)}</b><span class="sub">${fmtMD(t.due)}</span></div>`;}).join("")}
+    </div>`;
+}
+
+// ================= 描画 =================
+const NAV=[
+  ["home",`<span class="nico">${ico("home")}</span><span>ホーム</span>`],
+  ["adjust",`<span class="nico">${ico("hands")}</span><span>日程調整</span>`],
+  ["schedule",`<span class="nico">${ico("cal")}</span><span>スケジュール</span>`],
+  ["tasks",`<span class="nico">${ico("tasks")}</span><span>タスク</span>`],
+  ["notes",`<span class="nico">${ico("note")}</span><span>議事録</span>`]];
+
+// ===== フォーム値の退避：タブ移動・再描画で入力内容を失わない =====
+function readShareSafe(prefix){
+  const el=document.getElementById(prefix+"_mode");
+  if(!el) return null;
+  const v=el.value;
+  if(v==="none"||v==="all") return {shareMode:v, shareWith:[]};
+  return {shareMode:"select", shareWith:[...document.querySelectorAll("."+prefix+"_chk:checked")].map(c=>c.value)};
+}
+function captureForms(){
+  const g=id=>document.getElementById(id);
+  if(appUI.ev && g("ef_title")){
+    if(appUI.ev._skipCapture){ delete appUI.ev._skipCapture; }
+    else{
+      Object.assign(appUI.ev,{title:g("ef_title").value, date:g("ef_date").value,
+        start:g("ef_start").value, end:g("ef_end").value, place:g("ef_place").value});
+      if(g("ef_rep")){ appUI.ev.rep=g("ef_rep").value; appUI.ev.repN=g("ef_repN").value; }
+      appUI.ev.share=readShareSafe("ef")||appUI.ev.share;
+    }
+  }
+  if(appUI.task && g("tf_title")){
+    if(appUI.task._skipCapture){ delete appUI.task._skipCapture; }
+    else{
+      Object.assign(appUI.task,{title:g("tf_title").value, due:g("tf_due").value,
+        alert:g("tf_alert").value, memo:g("tf_memo").value, assignee:g("tf_who")?g("tf_who").value:""});
+      appUI.task.share=readShareSafe("tf")||appUI.task.share;
+    }
+  }
+  if(appUI.adj && document.getElementById("af_title")){
+    if(appUI.adj._skipCapture){ delete appUI.adj._skipCapture; }
+    else {
+      appUI.adj.title=g("af_title").value;
+      appUI.adj.dur=g("af_dur").value;
+      appUI.adj.cands=[...document.querySelectorAll("#af_cands .cand-line")].map(line=>({
+        cid:line.dataset.cid||"", date:line.querySelector("input").value, time:line.querySelector("select").value}));
+      if(appUI.adj.cands.length===0) appUI.adj.cands=[{},{}];
+      appUI.adj.partChecked=[...document.querySelectorAll(".af_part_chk:checked")].map(c=>c.value);
+      appUI.adj.share=readShareSafe("af")||appUI.adj.share;
+      if(g("gf_sei")) appUI.adj.gsei=g("gf_sei").value;
+      if(g("gf_com")) appUI.adj.gcom=g("gf_com").value;
+    }
+  }
+  if(appUI.note && g("nf_title")){
+    if(appUI.note._skipCapture){ delete appUI.note._skipCapture; }
+    else{
+      Object.assign(appUI.note,{title:g("nf_title").value, date:g("nf_date").value,
+        start:g("nf_start").value, end:g("nf_end").value, decisions:g("nf_dec").value, memo:g("nf_memo").value});
+      appUI.note.participants=[...document.querySelectorAll(".nf_part_chk:checked")].map(c=>c.value);
+      appUI.note.todos=[...document.querySelectorAll("#nf_todos .todo-line")].map(line=>({
+        text:line.querySelector(".td-text").value, due:line.querySelector(".td-due").value,
+        who:line.querySelector(".td-who").value, tid:line.dataset.tid||null}));
+      if(appUI.note.todos.length===0) appUI.note.todos=[{}];
+      appUI.note.share=readShareSafe("nf")||appUI.note.share;
+    }
+  }
+  if(appUI.resp && g("rf_name")){
+    appUI.respName=g("rf_name").value;
+    appUI.respAns={};
+    document.querySelectorAll(".rf_ans").forEach(s=>appUI.respAns[s.dataset.cid]=s.value);
+  }
+}
+
+// ===== 共有範囲の既定値：前回使った設定を記憶（初期値：予定・日程調整=全員、タスク・議事録=自分のみ） =====
+const SHARE_DEF_KEY="workhub_share_def";
+function shareDefaults(){
+  const base={ev:"all", task:"none", note:"none", adj:"all"};
+  try{ return Object.assign(base, JSON.parse(localStorage.getItem(SHARE_DEF_KEY))||{}); }catch(e){ return base; }
+}
+function rememberShareDef(kind, mode){
+  if(mode!=="none"&&mode!=="all") return; // 個人選択は既定として記憶しない
+  const d=shareDefaults(); d[kind]=mode;
+  try{ localStorage.setItem(SHARE_DEF_KEY, JSON.stringify(d)); }catch(e){}
+}
+
+
+// ===== 入力エラー：該当フィールドを赤枠＋メッセージで示す =====
+function fieldError(id,msg){
+  const el=document.getElementById(id);
+  if(!el){ notify(msg,true); return; }
+  const isInput=/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName);
+  el.classList.add(isInput?"err":"errbox");
+  let m=el.nextElementSibling;
+  if(!(m&&m.classList&&m.classList.contains("errmsg"))){
+    m=document.createElement("div"); m.className="errmsg";
+    el.insertAdjacentElement("afterend", m);
+  }
+  m.textContent=msg;
+  const clear=()=>{ el.classList.remove("err","errbox"); if(m.parentElement) m.remove(); };
+  el.addEventListener(isInput?"input":"change", clear, {once:true});
+  el.addEventListener("click", clear, {once:true});
+  el.scrollIntoView({block:"center",behavior:"smooth"});
+  if(isInput) el.focus({preventScroll:true});
+}
+
+// ===== 削除の確認 =====
+function confirmDel(type, id){
+  const list={events:S.events,tasks:S.tasks,notes:S.notes,adjustments:S.adjustments}[type];
+  const it=list.find(x=>x.id===id); if(!it) return;
+  const label={events:"予定",tasks:"タスク",notes:"議事録",adjustments:"調整案件"}[type];
+  if(!confirm(`${label}「${it.title}」を削除します。よろしいですか？\nこの操作は取り消せません。`)) return;
+  list.splice(list.indexOf(it),1);
+  removeIt(type, id);
+  render();
+  notify(`${label}を削除しました`);
+}
+
+function dueBadge(t){
+  const n=daysUntil(t.due);
+  if(t.done) return ["完了","#EEF1F3","#8A93A2"];
+  if(n<0) return [`${-n}日超過`,"#C24545","#fff"];
+  if(n===0) return ["本日","#D96C30","#fff"];
+  if(n<=3) return [`あと${n}日`,"#E8A23D","#fff"];
+  return [`あと${n}日`,"var(--as)","var(--ad)"];
+}
+
+function render(){
+  captureForms();
+  const M=document.getElementById("main");
+  if(tab==="home") M.innerHTML=renderHome();
+  else if(tab==="adjust") M.innerHTML=`<div class="split fade"><div>${renderAdjust()}</div><aside class="side"><div class="sh">${ico("cal",15)} スケジュール</div>${calPanelHtml(true)}</aside></div>`;
+  else if(tab==="schedule") M.innerHTML=`<div class="split fade"><div>${renderSchedule()}</div><aside class="side">${upcomingSideHtml()}</aside></div>`;
+  else if(tab==="tasks") M.innerHTML=`<div class="split fade"><div>${renderTasks()}</div><aside class="side"><div class="sh">${ico("cal",15)} スケジュール</div>${calPanelHtml(true)}</aside></div>`;
+  else if(tab==="notes"){ M.innerHTML=renderNotes(); if(appUI.note) refreshTodoWho(); }
+  // ナビは新着回答の既読処理後に描画（バッジを即時反映）
+  const unseen=unseenRespCount();
+  document.getElementById("nav").innerHTML = NAV.map(([id,label])=>
+    `<button class="${tab===id?"on":""}" onclick="go('${id}')">${label}${id==="adjust"&&unseen>0?` <span class="navbadge">${unseen}</span>`:""}</button>`).join("");
+  bindTimeHelpers();
+}
+// 開始時刻を選んだら、終了が未入力なら自動で1時間後をセット
+function bindTimeHelpers(){
+  [["ef_start","ef_end"],["nf_start","nf_end"]].forEach(([a,b])=>{
+    const s=document.getElementById(a), e=document.getElementById(b);
+    if(s&&e) s.onchange=()=>{ if(s.value&&!e.value){ const [h,m]=s.value.split(":").map(Number); e.value=`${pad((h+1)%24)}:${pad(m)}`; } };
+  });
+}
+
+function alertTasksHtml(clickable){
+  const alerts=visTasks().filter(t=>!t.done && daysUntil(t.alert)<=0);
+  if(alerts.length===0) return "";
+  return `<div class="alertbox"><div class="h">${ico("bell",15)} 期日アラート（${alerts.length}件）</div>
+    ${alerts.map(t=>`<div class="arow" ${clickable?`style="cursor:pointer" onclick="go('tasks')"`:""}>
+      <b>${esc(t.title)}${t.assignee?`　<span class="whotag">担当:${esc(t.assignee)}</span>`:""}</b><span class="due">期日 ${fmtMD(t.due)}（あと${daysUntil(t.due)}日）</span></div>`).join("")}</div>`;
+}
+
+function renderHome(){
+  const upcoming=visEvents().filter(e=>daysUntil(e.date)>=0).sort((a,b)=>(a.date+(a.start||"")).localeCompare(b.date+(b.start||""))).slice(0,6);
+  const nearTasks=visTasks().filter(t=>!t.done).sort((a,b)=>new Date(a.due)-new Date(b.due)).slice(0,6);
+  const pending=visAdjs().filter(a=>a.status==="調整中").length;
+  const apps=[
+    ["adjust",ico("hands",30),"日程調整","候補日を送って回答を集計・確定",`${pending}<small> 件</small>`],
+    ["schedule",ico("cal",30),"スケジュール","カレンダーで予定を一元管理",`${visEvents().length}<small> 件</small>`],
+    ["tasks",ico("tasks",30),"タスク","期日から逆算してアラート",`${visTasks().filter(t=>!t.done).length}<small> 件</small>`],
+    ["notes",ico("note",30),"議事録","記録するとToDoがタスクへ",`${visNotes().length}<small> 件</small>`],
+  ];
+  return `<div class="fade">
+    <div style="font-size:17px;color:var(--gray);margin-bottom:18px">今日は ${fmtMD(toISO(T))} です</div>
+    ${alertTasksHtml(true)}
+    <div class="home-layout">
+      <div class="applist">
+        ${apps.map(([id,icon,nm,ds,cnt])=>`<button class="appbtn" onclick="go('${id}')">
+          <span class="icon">${icon}</span>
+          <span><span class="nm">${nm}</span><div class="ds">${ds}</div></span>
+          <span class="open"><span class="num">${cnt}</span><span class="lbl">開く ›</span></span></button>`).join("")}
+      </div>
+      <div>
+        <div class="panel">
+          <div class="ph">直近の予定<button class="more" onclick="go('schedule')">すべて見る ›</button></div>
+          ${upcoming.length===0?`<div style="font-size:15px;color:var(--gray)">予定はありません</div>`:
+            upcoming.map(e=>`<div class="srow"><span class="pill">${fmtMD(e.date)}</span>
+              <b>${esc(e.title)}</b><span class="sub">${e.start||""}${e.end?`〜${e.end}`:""}</span></div>`).join("")}
+        </div>
+        <div class="panel">
+          <div class="ph">期日が近いタスク<button class="more" onclick="go('tasks')">すべて見る ›</button></div>
+          ${nearTasks.length===0?`<div style="font-size:15px;color:var(--gray)">タスクはありません</div>`:
+            nearTasks.map(t=>{const [text,bg,color]=dueBadge(t);
+              return `<div class="srow"><span class="badge" style="background:${bg};color:${color};margin-top:0">${text}</span>
+              <b>${esc(t.title)}</b><span class="sub">${t.assignee?esc(t.assignee)+" ｜ ":""}期日 ${fmtMD(t.due)}</span></div>`;}).join("")}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderAdjust(){
+  let html=``;
+  if(!appUI.adj){
+    html+=`<button class="addbtn" onclick="appUI.adj={cands:[{},{}]};render()">＋ 新しい日程調整を作成</button>`;
+  } else {
+    const sh=appUI.adj.share||{shareMode:shareDefaults().adj,shareWith:[]};
+    html+=`<div class="form"><div class="ft">${appUI.adj.editId?"日程調整の編集":"日程調整の作成"}</div>
+      <label>件名<span class="req">必須</span><input id="af_title" value="${esc(appUI.adj.title||"")}" placeholder="例）D社 キックオフ会議"></label>
+      <label>所要時間<select id="af_dur">${[30,60,90,120].map(d=>`<option value="${d}" ${String(d)===(appUI.adj.dur||"60")?"selected":""}>${d}分</option>`).join("")}</select></label>
+      <label>回答してもらう相手（宛先）<span class="req">必須</span></label>
+      ${partChecklistHtml()}
+      <label>候補日時<span class="req">必須</span></label>
+      <div id="af_cands">${appUI.adj.cands.map(c=>candRowHtml(c)).join("")}</div>
+      <button class="ghost" style="margin-bottom:14px" onclick="addCandRow()">＋ 候補を追加</button>
+      ${appUI.adj.editId&&appUI.adj.hasResp?`<div class="note-small" style="margin:-8px 0 14px">※ 候補日時を削除すると、その候補への回答も破棄されます。</div>`:""}
+      ${shareControlHtml("af", sh.shareMode||"all", sh.shareWith||[])}
+      <div style="display:flex;gap:10px">
+        <button class="prim" onclick="createAdj()">${appUI.adj.editId?"更新する":"作成する"}</button>
+        <button class="ghost" onclick="appUI.adj=null;render()">閉じる</button></div>
+      ${REMOTE?"":`<div class="note-small">※ お試しモードのため回答用URLは発行されません。GAS設定後に利用できます。</div>`}
+    </div>`;
+  }
+  html+=`<div class="searchbar">
+    <input value="${esc(FLT.adjQ)}" placeholder="検索：日程調整（件名・宛先）" oninput="FLT.adjQ=this.value;document.getElementById('adjList').innerHTML=adjListHtml()"></div>
+  <div id="adjList">${adjListHtml()}</div>`;
+  return html;
+}
+
+function adjListHtml(){
+  let html="";
+  const list=visAdjs().filter(a=>hitQ(FLT.adjQ, a.title, (a.participants||[]).join(" ")));
+  if(list.length===0) html+=`<div class="empty">${FLT.adjQ.trim()?"条件に一致する調整案件はありません":`調整案件はまだありません${!appUI.adj?`<div><button class="prim" onclick="appUI.adj={cands:[{},{}]};render()">＋ 日程調整を作成する</button></div>`:""}`}</div>`;
+  list.slice().sort((a,b)=>b.id-a.id).forEach(adj=>{
+    const open=openAdj===adj.id;
+    const newN=unseenOf(adj);
+    if(open) markRespSeen(adj);
+    html+=`<div class="card"><button class="chead" onclick="openAdj=${open?"null":adj.id};render()">
+      <span class="tag ${adj.status==="確定"?"tagD":"tagP"}">${adj.status}</span>
+      <span class="title">${esc(adj.title)} ${shareTag(adj)}</span>${!open&&newN>0?`<span class="respnew">新着回答${newN}</span>`:""}<span style="color:#AEB7C0">${open?"▲":"▼"}</span></button>`;
+    if(open){
+      const answered=(adj.responses||[]).map(r=>r.name);
+      html+=`<div style="padding:0 18px 18px"><div class="meta">所要 ${adj.duration}分 ｜ 回答 ${answered.length}名${adj.status==="確定"?` ｜ 確定：${adj.confirmed}`:""}</div>
+      ${adj.status==="確定"&&adj.meetUrl?`<div class="meta">${ico("link",13)} 会議URL：<a href="${esc(adj.meetUrl)}" target="_blank" style="color:var(--ad);font-weight:700">${esc(adj.meetUrl)}</a></div>`:""}
+      ${adj.status==="確定"&&REMOTE?`<div class="note-small" style="margin-bottom:10px">回答用URLは確定案内ページに切り替わっています。相手に「確定しました」とひと言送れば、同じURLから日時・会議情報・カレンダー登録を確認できます。</div>`:""}`;
+      if((adj.participants||[]).length){
+        html+=`<div class="rstat">${adj.participants.map(p=>
+          `<span class="rchip ${answered.includes(p)?"ok":"wait"}">${answered.includes(p)?"✓ ":""}${esc(p)}${answered.includes(p)?"":"（未回答）"}</span>`).join("")}</div>`;
+      }
+      const url=REMOTE ? answerUrlOf(adj) : "";
+      if(url && adj.status==="調整中"){
+        html+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 8px">
+          <button class="confirm" onclick="copyInvite(${adj.id})">${ico("mail",14)} 依頼文つきでコピー</button>
+          <button class="miniA" onclick="copyUrl(${adj.id})">URLのみコピー</button></div>
+          <div class="urlrow" style="margin-top:0"><input readonly value="${esc(url)}" onclick="this.select()"></div>`;
+      }
+      if(adj.status==="確定" && url){
+        html+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 8px">
+          <button class="confirm" onclick="copyConfirmMsg(${adj.id})">${ico("mail",14)} 確定案内文つきでコピー</button>
+          <button class="miniA" onclick="copyUrl(${adj.id})">URLのみコピー</button></div>
+          <div class="urlrow" style="margin-top:0"><input readonly value="${esc(url)}" onclick="this.select()"></div>
+          <div class="note-small" style="margin-top:-2px">↑ このURLを送ると、相手は確定日時・会議情報・カレンダー登録を確認できます。</div>`;
+      }
+      const scores=adj.candidates.map(c=>(adj.responses||[]).reduce((s,r)=>s+(MARK[r.answers[c.id]]??0),0));
+      const max=Math.max(...scores);
+      const canConfirm=(adj.responses||[]).length>0;
+      adj.candidates.forEach((c,i)=>{
+        const best=canConfirm && scores[i]===max && adj.status==="調整中";
+        const cnt={"○":0,"△":0,"×":0};
+        (adj.responses||[]).forEach(r=>{ const a=r.answers[c.id]; if(cnt[a]!==undefined) cnt[a]++; });
+        html+=`<div class="cand ${best?"best":""}"><div style="flex:1">
+          <div style="font-weight:800;font-size:15px">${fmtMD(c.date)} ${c.time}${best?`<span class="besttag">最有力</span>`:""}${canConfirm?`<span class="anscnt">○${cnt["○"]}　△${cnt["△"]}　×${cnt["×"]}</span>`:""}</div>
+          <div style="font-size:13px;color:#8A93A2;margin-top:3px">${(adj.responses||[]).length===0?"回答待ち":(adj.responses||[]).map(r=>`${esc(r.name)}:${r.answers[c.id]||"−"}`).join("　")}</div></div>
+          ${adj.status==="調整中"?(canConfirm
+            ?`<button class="confirm ${best?"":"alt"}" onclick="openConfirmModal(${adj.id},'${c.id}')">この日時で確定</button>`
+            :`<button class="confirm" disabled title="相手の回答が届くまで確定できません">回答待ち</button>`):""}</div>`;
+      });
+      if(adj.status==="調整中"){
+        if(!canConfirm) html+=`<div class="note-small" style="margin-bottom:8px">⚠ 相手の回答が入力されるまで確定ボタンは押せません。${REMOTE?"回答が届いたら「↻ 更新」で反映されます。":""}</div>`;
+        if(appUI.resp===adj.id){
+          const ra=appUI.respAns||{};
+          html+=`<div class="form" style="margin-top:10px;margin-bottom:6px">
+            <div class="ft" style="font-size:15px">回答の入力（電話等で届いた回答を代理で記録）</div>
+            <label>回答者名<span class="req">必須</span><input id="rf_name" value="${esc(appUI.respName||"")}" placeholder="例）田中（株式会社サンプル）"></label>
+            ${adj.candidates.map(c=>`<label>${fmtMD(c.date)} ${c.time}
+              <select class="rf_ans" data-cid="${c.id}" style="width:130px">
+                ${["○ 参加可","△ 微妙","× 不可"].map(o=>{const v=o[0];return `<option value="${v}" ${(ra[c.id]||"○")===v?"selected":""}>${o}</option>`;}).join("")}
+              </select></label>`).join("")}
+            <div style="display:flex;gap:10px">
+              <button class="prim" onclick="saveResp(${adj.id})">回答を記録</button>
+              <button class="ghost" onclick="appUI.resp=null;appUI.respName='';appUI.respAns=null;render()">閉じる</button></div></div>`;
+        } else {
+          html+=`<div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
+            <button class="ghost" onclick="appUI.resp=${adj.id};appUI.respName='';appUI.respAns=null;render()">＋ 回答を代理入力</button>
+            <button class="ghost" onclick="editAdj(${adj.id})">${ico("edit",14)} 内容を編集</button>
+            <button class="mini" style="margin-left:auto" onclick="confirmDel('adjustments',${adj.id})">削除</button></div>`;
+        }
+      } else if(adj.status==="確定"){
+        html+=`<div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+          <button class="ghost" onclick="reopenAdj(${adj.id})">${ico("undo",14)} 確定を取り消して再調整</button>
+          <button class="mini" style="margin-left:auto" onclick="confirmDel('adjustments',${adj.id})">削除</button></div>`;
+      }
+      html+=`</div>`;
+    }
+    html+=`</div>`;
+  });
+  return html;
+}
+
+function createAdj(){
+  const title=document.getElementById("af_title").value.trim();
+  const dur=+document.getElementById("af_dur").value;
+  const participants=[...document.querySelectorAll(".af_part_chk:checked")].map(c=>c.value);
+  const cands=[];
+  document.querySelectorAll("#af_cands .cand-line").forEach((line,i)=>{
+    const d=line.querySelector("input");
+    const t=line.querySelector("select");
+    if(d.value&&t.value) cands.push({id:line.dataset.cid||("c"+Date.now().toString(36)+"_"+i), date:d.value, time:t.value});
+  });
+  if(!title){ fieldError("af_title","件名を入力してください"); return; }
+  if(cands.length===0){ fieldError("af_cands","候補日時を1件以上入力してください（日付と時刻の両方）"); return; }
+  if(participants.length===0){ fieldError("af_parts","回答してもらう相手を1名以上選択してください"); return; }
+  const shA=readShare("af");
+  rememberShareDef("adj", shA.shareMode);
+  const eid=appUI.adj&&appUI.adj.editId;
+  if(eid){
+    const adj=S.adjustments.find(a=>a.id===eid);
+    if(adj){
+      if(!conflictOk(adj, appUI.adj.baseUpdatedAt, "調整案件")) return;
+      Object.assign(adj,{title, duration:dur, participants, candidates:cands,
+        shareMode:shA.shareMode, shareWith:shA.shareWith, shared:shA.shareMode!=="none"});
+      persist("adjustments", adj);
+    }
+    appUI.adj=null; openAdj=eid; render();
+    notify("調整案件を更新しました");
+    return;
+  }
+  const adj={id:uid(), title, duration:dur, status:"調整中", participants, candidates:cands, responses:[], owner:CURRENT_USER,
+    createdBy:CURRENT_USER, shareMode:shA.shareMode, shareWith:shA.shareWith, shared:shA.shareMode!=="none"};
+  S.adjustments.push(adj);
+  persist("adjustments", adj);
+  appUI.adj=null; openAdj=adj.id; render();
+  notify(REMOTE?"調整案件を作成しました。回答用URLをコピーして相手に送ってください":"調整案件を作成しました");
+}
+function editAdj(id){
+  const adj=S.adjustments.find(a=>a.id===id); if(!adj) return;
+  if(adj.status!=="調整中"){ notify("確定済みの案件は編集できません", true); return; }
+  if(adj.createdBy && adj.createdBy!==CURRENT_USER){ notify("編集できるのは作成者のみです", true); return; }
+  appUI.adj={editId:id, baseUpdatedAt:adj.updatedAt||0, title:adj.title, dur:String(adj.duration||60),
+    cands:(adj.candidates||[]).map(c=>({cid:c.id, date:c.date, time:c.time})),
+    partChecked:[...(adj.participants||[])],
+    hasResp:(adj.responses||[]).length>0,
+    share:{shareMode:adj.shareMode!==undefined?adj.shareMode:(adj.shared?"all":"none"), shareWith:adj.shareWith||[]}};
+  if(appUI.adj.cands.length===0) appUI.adj.cands=[{},{}];
+  appUI.adj._skipCapture=true;
+  go("adjust");
+  setTimeout(()=>{const f=document.querySelector(".form"); if(f) f.scrollIntoView({behavior:"smooth",block:"center"});},60);
+}
+
+function renderSchedule(){
+  const byDate=eventsByDate();
+  const dayEvents=byDate[selDate]||[];
+  const dayTasks=(tasksByDate()[selDate]||[]);
+  let html=`<div>${calPanelHtml(false)}
+    <div class="dayhead"><b>${fmtMD(selDate)} の予定</b>
+      <button class="sp" onclick="appUI.ev={};render()">＋ 予定追加</button></div>`;
+  if(appUI.ev){
+    const v=appUI.ev, sh=v.share||{shareMode:shareDefaults().ev,shareWith:[]};
+    html+=`<div class="form"><div class="ft">${v.editId?"予定の編集":"予定の登録"}</div>
+      <label>件名<span class="req">必須</span><input id="ef_title" value="${esc(v.title||"")}" placeholder="例）C社 打ち合わせ"></label>
+      <div class="row">
+        <label>日付<input type="date" id="ef_date" value="${v.date||selDate}"></label>
+        <label>開始${clockSelectHtml("ef_start", v.start)}</label>
+        <label>終了${clockSelectHtml("ef_end", v.end)}</label></div>
+      <label>場所・URL<input id="ef_place" value="${esc(v.place||"")}" placeholder="例）会議室A / Zoom"></label>
+      ${v.editId?"":`<div class="row">
+        <label>繰り返し<select id="ef_rep">
+          <option value="" ${!v.rep?"selected":""}>なし</option>
+          <option value="w" ${v.rep==="w"?"selected":""}>毎週</option>
+          <option value="2w" ${v.rep==="2w"?"selected":""}>隔週</option>
+          <option value="m" ${v.rep==="m"?"selected":""}>毎月（同じ日）</option></select></label>
+        <label>繰り返し回数<select id="ef_repN">${[2,3,4,5,6,7,8,9,10,11,12].map(n=>`<option ${String(n)===(v.repN||"4")?"selected":""}>${n}</option>`).join("")}</select></label>
+      </div>
+      <div class="note-small" style="margin:-8px 0 14px">※ 繰り返しを選ぶと、初回を含めた回数分の予定がまとめて登録されます（各回は個別の予定として編集・削除できます）。</div>`}
+      ${shareControlHtml("ef", sh.shareMode||"none", sh.shareWith||[])}
+      <div style="display:flex;gap:10px">
+        <button class="prim" onclick="addEvent()">${v.editId?"更新する":"登録する"}</button>
+        <button class="ghost" onclick="appUI.ev=null;render()">閉じる</button></div></div>`;
+  }
+  if(dayEvents.length===0 && dayTasks.length===0 && !appUI.ev) html+=`<div class="empty">この日の予定はありません<div><button class="prim" onclick="appUI.ev={};render()">＋ この日に予定を追加する</button></div></div>`;
+  dayEvents.forEach(e=>{
+    html+=`<div class="ev"><div class="time">${e.start||"終日"}${e.end?`〜${e.end}`:""}</div>
+      <div class="body"><div class="name">${esc(e.title)}${e.auto?`<span class="autotag">調整から自動登録</span>`:""}${shareTag(e)}${e.owner?`<span class="whotag">${esc(e.owner)}</span>`:""}</div>
+      ${e.place?`<div class="place">${ico("pin",13)} ${esc(e.place)}</div>`:""}</div>
+      <div class="btncol"><button class="miniA" onclick="createNoteFromEvent(${e.id})">議事録作成</button>
+      <button class="mini" onclick="editEvent(${e.id})">編集</button>
+      ${kebabHtml([["共有設定",`openShareEditor('events',${e.id})`],["削除",`confirmDel('events',${e.id})`,true]])}</div></div>`;
+  });
+  dayTasks.forEach(t=>{
+    html+=`<div class="ev" style="cursor:pointer;background:#FFFDF8" onclick="go('tasks')">
+      <div class="time" style="color:#D96C30">〆切</div>
+      <div class="body"><div class="name">${esc(t.title)}${t.assignee?`<span class="whotag">担当:${esc(t.assignee)}</span>`:""}</div></div>
+      <span style="font-size:12px;color:#AEB7C0;flex-shrink:0">タスクへ ›</span></div>`;
+  });
+  return html+`</div>`;
+}
+
+function addEvent(){
+  const title=document.getElementById("ef_title").value.trim();
+  const date=document.getElementById("ef_date").value;
+  if(!title){ fieldError("ef_title","件名を入力してください"); return; }
+  if(!date){ fieldError("ef_date","日付を選択してください"); return; }
+  const sh=readShare("ef");
+  rememberShareDef("ev", sh.shareMode);
+  const vals={title, date,
+    start:document.getElementById("ef_start").value, end:document.getElementById("ef_end").value,
+    place:document.getElementById("ef_place").value.trim(),
+    shareMode:sh.shareMode, shareWith:sh.shareWith, shared:sh.shareMode!=="none"};
+  if(appUI.ev && appUI.ev.editId){
+    const ev=S.events.find(x=>x.id===appUI.ev.editId);
+    if(ev){
+      if(!conflictOk(ev, appUI.ev.baseUpdatedAt, "予定")) return;
+      Object.assign(ev, vals); persist("events", ev);
+    }
+    appUI.ev=null; selDate=date; render();
+    notify("予定を更新しました");
+    return;
+  }
+  const ev={id:uid(), ...vals, auto:false, owner:CURRENT_USER, createdBy:CURRENT_USER};
+  S.events.push(ev);
+  persist("events", ev);
+  // 繰り返し登録
+  const repEl=document.getElementById("ef_rep");
+  const rep=repEl?repEl.value:"";
+  const repN=rep?+document.getElementById("ef_repN").value:1;
+  if(rep && repN>1){
+    ev.repeatGroup=ev.id;
+    persist("events", ev);
+    for(let k=1;k<repN;k++){
+      const nd = rep==="w"?addDays(date,7*k) : rep==="2w"?addDays(date,14*k) : addMonthsIso(date,k);
+      const ev2={id:uid(), ...vals, date:nd, auto:false, owner:CURRENT_USER, createdBy:CURRENT_USER, repeatGroup:ev.id};
+      S.events.push(ev2);
+      persist("events", ev2);
+    }
+  }
+  appUI.ev=null; selDate=date; render();
+  notify(rep&&repN>1?`予定を${repN}回分（${rep==="w"?"毎週":rep==="2w"?"隔週":"毎月"}）登録しました`:"予定を登録しました");
+}
+function addMonthsIso(iso,k){
+  const [y,m,d]=iso.split("-").map(Number);
+  const nd=new Date(y, m-1+k, 1);
+  const lastDay=new Date(nd.getFullYear(), nd.getMonth()+1, 0).getDate();
+  nd.setDate(Math.min(d,lastDay));
+  return toISO(nd);
+}
+function editEvent(id){
+  const e=S.events.find(x=>x.id===id); if(!e) return;
+  if(e.createdBy && e.createdBy!==CURRENT_USER){ notify("編集できるのは作成者のみです", true); return; }
+  appUI.ev={editId:id, baseUpdatedAt:e.updatedAt||0, title:e.title, date:e.date, start:e.start||"", end:e.end||"", place:e.place||"",
+    share:{shareMode:e.shareMode!==undefined?e.shareMode:(e.shared?"all":"none"), shareWith:e.shareWith||[]}};
+  appUI.ev._skipCapture=true;
+  selDate=e.date; go("schedule");
+  setTimeout(()=>{const f=document.querySelector(".form"); if(f) f.scrollIntoView({behavior:"smooth",block:"center"});},60);
+}
+
+function renderTasks(){
+  let html=`${alertTasksHtml(false)}`;
+  if(!appUI.task){
+    html+=`<button class="addbtn" onclick="appUI.task={};render()">＋ タスクを登録</button>`;
+  } else {
+    const v=appUI.task, sh=v.share||{shareMode:shareDefaults().task,shareWith:[]};
+    const whoNames=rosterNames(true);
+    if(v.assignee && !whoNames.includes(v.assignee)) whoNames.push(v.assignee);
+    const whoSel=v.assignee!==undefined&&v.assignee!==""?v.assignee:CURRENT_USER;
+    html+=`<div class="form"><div class="ft">${v.editId?"タスクの編集":"タスクの登録"}</div>
+      <label>件名<span class="req">必須</span><input id="tf_title" value="${esc(v.title||"")}" placeholder="例）A社 提案資料の原案提出"></label>
+      <div class="row">
+        <label>期日<span class="req">必須</span><input type="date" id="tf_due" value="${v.due||""}" onchange="const a=document.getElementById('tf_alert'); if(!a.value&&this.value){const d=new Date(this.value+'T00:00:00');d.setDate(d.getDate()-7);a.value=d.toISOString().slice(0,10)}"></label>
+        <label>アラート日（既定：7日前）<input type="date" id="tf_alert" value="${v.alert||""}"></label>
+        <label>担当者<select id="tf_who">${whoNames.map(n=>`<option ${n===whoSel?"selected":""}>${esc(n)}</option>`).join("")}</select></label></div>
+      <label>メモ<input id="tf_memo" value="${esc(v.memo||"")}"></label>
+      ${shareControlHtml("tf", sh.shareMode||"none", sh.shareWith||[])}
+      <div class="note-small" style="margin:-8px 0 14px">※ 担当者に選ばれた人には、共有範囲に関わらずこのタスクが表示されます。</div>
+      <div style="display:flex;gap:10px">
+        <button class="prim" onclick="addTask()">${v.editId?"更新する":"登録する"}</button>
+        <button class="ghost" onclick="appUI.task=null;render()">閉じる</button></div></div>`;
+  }
+  html+=`<div class="searchbar">
+    <input value="${esc(FLT.taskQ)}" placeholder="検索：タスク（件名・メモ・担当者）" oninput="FLT.taskQ=this.value;document.getElementById('taskList').innerHTML=taskListHtml()">
+    <select onchange="FLT.taskWho=this.value;document.getElementById('taskList').innerHTML=taskListHtml()">
+      <option value="">担当者：すべて</option>
+      ${[...new Set(visTasks().map(t=>t.assignee).filter(Boolean))].sort().map(n=>`<option ${FLT.taskWho===n?"selected":""}>${esc(n)}</option>`).join("")}
+    </select></div>
+  <div id="taskList">${taskListHtml()}</div>`;
+  return html;
+}
+
+function taskCardHtml(t){
+  const [text,bg,color]=dueBadge(t);
+  return `<div class="card task ${t.done?"done":""}">
+    <input type="checkbox" class="tchk" title="${t.done?"未完了に戻す":"完了にする"}" ${t.done?"checked":""} onclick="toggleTask(${t.id})">
+    <span class="badge" style="background:${bg};color:${color}">${text}</span>
+    <div style="flex:1;min-width:0"><div class="tname">${esc(t.title)}${t.assignee?` <span class="whotag">担当:${esc(t.assignee)}</span>`:""}${t.from==="note"?` <span class="autotag">議事録から自動登録</span>`:""}${shareTag(t)}</div>
+    <div class="tmeta">期日 ${fmtMD(t.due)} ｜ アラート ${fmtMD(t.alert)}</div>
+    ${t.memo?`<div class="tmemo">${esc(t.memo)}</div>`:""}</div>
+    <div class="btncol"><button class="mini" onclick="editTask(${t.id})">編集</button>
+    ${kebabHtml([["共有設定",`openShareEditor('tasks',${t.id})`],["削除",`confirmDel('tasks',${t.id})`,true]])}</div></div>`;
+}
+
+// 「…」メニュー（頻度の低い操作を畳んで一覧の視覚ノイズを減らす）
+function kebabHtml(items){
+  return `<div class="kebabwrap"><button class="mini" onclick="toggleKebab(event,this)">${ico("dots",15)}</button>
+    <div class="kmenu">${items.map(([label,fn,danger])=>`<button class="${danger?"kdanger":""}" onclick="this.closest('.kmenu').classList.remove('open');${fn}">${label}</button>`).join("")}</div></div>`;
+}
+function toggleKebab(e,btn){
+  e.stopPropagation();
+  const menu=btn.nextElementSibling;
+  const wasOpen=menu.classList.contains("open");
+  document.querySelectorAll(".kmenu.open").forEach(m=>m.classList.remove("open"));
+  if(wasOpen) return;
+  menu.classList.add("open");
+  // カードの overflow:hidden で切れないよう、ボタン位置基準の固定配置で表示する
+  const r=btn.getBoundingClientRect();
+  menu.style.position="fixed";
+  menu.style.top=(r.bottom+4)+"px";
+  let left=r.right-150;
+  if(left<8) left=8;
+  menu.style.left=left+"px";
+  menu.style.right="auto";
+  requestAnimationFrame(()=>{
+    const mr=menu.getBoundingClientRect();
+    if(mr.bottom>window.innerHeight-8) menu.style.top=Math.max(8, r.top-mr.height-4)+"px";
+    if(mr.right>window.innerWidth-8) menu.style.left=Math.max(8, window.innerWidth-mr.width-8)+"px";
+  });
+}
+document.addEventListener("click", ()=>document.querySelectorAll(".kmenu.open").forEach(m=>m.classList.remove("open")));
+window.addEventListener("scroll", ()=>document.querySelectorAll(".kmenu.open").forEach(m=>m.classList.remove("open")), true);
+
+function taskListHtml(){
+  let all=visTasks().filter(t=>hitQ(FLT.taskQ, t.title, t.memo, t.assignee));
+  if(FLT.taskWho) all=all.filter(t=>t.assignee===FLT.taskWho);
+  const filtered=!!(FLT.taskQ.trim()||FLT.taskWho);
+  const act=all.filter(t=>!t.done).sort((a,b)=>new Date(a.due)-new Date(b.due));
+  const done=all.filter(t=>t.done).sort((a,b)=>new Date(b.due)-new Date(a.due));
+  let html=`<div class="seclabel">タスク一覧（期日が近い順）${filtered?`　<span style="color:var(--ad)">絞り込み中：${all.length}件</span>`:""}</div>`;
+  if(act.length===0) html+=`<div class="empty">${filtered?"条件に一致する未完了タスクはありません":`未完了のタスクはありません${!appUI.task?`<div><button class="prim" onclick="appUI.task={};render()">＋ タスクを登録する</button></div>`:""}`}</div>`;
+  act.forEach(t=>html+=taskCardHtml(t));
+  if(done.length>0){
+    html+=`<button class="donetoggle" onclick="FLT.showDone=!FLT.showDone;document.getElementById('taskList').innerHTML=taskListHtml()">✔ 完了済み ${done.length}件を${FLT.showDone?"隠す ▲":"表示 ▼"}</button>`;
+    if(FLT.showDone) done.forEach(t=>html+=taskCardHtml(t));
+  }
+  return html;
+}
+
+function toggleTask(id){
+  const x=S.tasks.find(x=>x.id===id);
+  x.done=!x.done;
+  persist("tasks", x);
+  render();
+}
+
+function addTask(){
+  const title=document.getElementById("tf_title").value.trim();
+  const due=document.getElementById("tf_due").value;
+  if(!title){ fieldError("tf_title","件名を入力してください"); return; }
+  if(!due){ fieldError("tf_due","期日を選択してください"); return; }
+  const alert=document.getElementById("tf_alert").value||addDays(due,-7);
+  const whoEl=document.getElementById("tf_who");
+  const sh=readShare("tf");
+  rememberShareDef("task", sh.shareMode);
+  const vals={title, due, alert, memo:document.getElementById("tf_memo").value.trim(),
+    assignee:whoEl?whoEl.value:"", shareMode:sh.shareMode, shareWith:sh.shareWith, shared:sh.shareMode!=="none"};
+  if(appUI.task && appUI.task.editId){
+    const t=S.tasks.find(x=>x.id===appUI.task.editId);
+    if(t){
+      if(!conflictOk(t, appUI.task.baseUpdatedAt, "タスク")) return;
+      Object.assign(t, vals); persist("tasks", t);
+    }
+    appUI.task=null; render();
+    notify("タスクを更新しました");
+    return;
+  }
+  const task={id:uid(), ...vals, done:false, from:null, createdBy:CURRENT_USER};
+  S.tasks.push(task);
+  persist("tasks", task);
+  appUI.task=null; render();
+  notify("タスクを登録しました");
+}
+function editTask(id){
+  const t=S.tasks.find(x=>x.id===id); if(!t) return;
+  if(t.createdBy && t.createdBy!==CURRENT_USER && t.assignee!==CURRENT_USER){
+    notify("編集できるのは作成者と担当者のみです", true); return;
+  }
+  appUI.task={editId:id, baseUpdatedAt:t.updatedAt||0, title:t.title, due:t.due, alert:t.alert||"", memo:t.memo||"", assignee:t.assignee||"",
+    share:{shareMode:t.shareMode!==undefined?t.shareMode:(t.shared?"all":"none"), shareWith:t.shareWith||[]}};
+  appUI.task._skipCapture=true;
+  go("tasks");
+  setTimeout(()=>{const f=document.querySelector(".form"); if(f) f.scrollIntoView({behavior:"smooth",block:"center"});},60);
+}
+
+function renderNotes(){
+  let html=`<div class="fade" style="max-width:860px;margin:0 auto">`;
+  if(!appUI.note){
+    html+=`<button class="addbtn" onclick="appUI.note={title:'',date:'${toISO(T)}',todos:[{}]};render()">＋ 議事録を作成</button>`;
+  } else {
+    const f=appUI.note;
+    const shN=f.share||{shareMode:shareDefaults().note,shareWith:[]};
+    html+=`<div class="form"><div class="ft">${f.editId?"議事録の編集":"議事録の作成"}</div>
+      <label>タイトル<span class="req">必須</span><input id="nf_title" value="${esc(f.title||"")}" placeholder="例）A社 提案会議 議事録"></label>
+      <div class="row">
+        <label>日付<input type="date" id="nf_date" value="${f.date||toISO(T)}"></label>
+        <label>開始${clockSelectHtml("nf_start", f.start)}</label>
+        <label>終了${clockSelectHtml("nf_end", f.end)}</label>
+      </div>
+      <label>参加者（登録済みメンバーから選択）</label>
+      ${notePartChecklistHtml(f.participants)}
+      <label>決定事項<textarea id="nf_dec" rows="3" placeholder="会議で決まったこと">${esc(f.decisions||"")}</textarea></label>
+      <label>ToDo（保存するとタスクへ自動登録され、担当者のタスク一覧に反映されます）</label>
+      <div id="nf_todos">${(f.todos||[{}]).map(t=>todoLineHtml(t)).join("")}</div>
+      <button class="ghost" style="margin-bottom:14px" onclick="addTodoLine()">＋ ToDoを追加</button>
+      ${f.editId?`<div class="note-small" style="margin:-8px 0 14px">※ 既存ToDoの変更は登録済みタスクへ反映されません。新しく追加した行のみタスクに登録されます。</div>`:""}
+      <label>メモ<textarea id="nf_memo" rows="2">${esc(f.memo||"")}</textarea></label>
+      ${shareControlHtml("nf", shN.shareMode||"none", shN.shareWith||[])}
+      <div class="note-small" style="margin:-8px 0 14px">※ 参加者に入力した人には、共有範囲に関わらずこの議事録が表示されます。</div>
+      <div style="display:flex;gap:10px">
+        <button class="prim" onclick="saveNote()">${f.editId?"更新する":"保存する"}</button>
+        <button class="ghost" onclick="appUI.note=null;render()">閉じる</button></div></div>`;
+  }
+  html+=`<div class="searchbar">
+    <input value="${esc(FLT.noteQ)}" placeholder="検索：議事録（タイトル・決定事項・メモ・参加者）" oninput="FLT.noteQ=this.value;document.getElementById('noteList').innerHTML=noteListHtml()"></div>
+  <div id="noteList">${noteListHtml()}</div>`;
+  return html+`</div>`;
+}
+
+function noteListHtml(){
+  const list=visNotes().filter(n=>hitQ(FLT.noteQ, n.title, n.decisions, n.memo, (n.participants||[]).join(" "), (n.todos||[]).map(t=>t.text).join(" ")));
+  const filtered=!!FLT.noteQ.trim();
+  let html="";
+  if(list.length===0) html+=`<div class="empty">${filtered?"条件に一致する議事録はありません":`議事録はまだありません${!appUI.note?`<div><button class="prim" onclick="appUI.note={title:\'\',date:toISO(T),todos:[{}]};render()">＋ 最初の議事録を作成する</button></div>`:""}`}</div>`;
+  list.slice().sort((a,b)=>b.id-a.id).forEach(n=>{
+    const open=openNote===n.id;
+    html+=`<div class="card"><button class="chead" onclick="openNote=${open?"null":n.id};render()">
+      <span style="font-size:14px;color:var(--gray);flex-shrink:0">${fmtMD(n.date)}${n.start?` ${n.start}${n.end?`〜${n.end}`:""}`:""}</span>
+      <span class="title">${esc(n.title)} ${shareTag(n)}</span>${n.author?`<span class="whotag">${esc(n.author)}</span>`:""}<span style="color:#AEB7C0">${open?"▲":"▼"}</span></button>`;
+    if(open){
+      html+=`<div style="padding:0 18px 18px">`;
+      if((n.participants||[]).length) html+=`<div class="nl">参加者</div><div class="nb">${n.participants.map(esc).join("、")}</div>`;
+      if(n.decisions) html+=`<div class="nl">決定事項</div><div class="decbox">${esc(n.decisions)}</div>`;
+      if(n.todos.length>0){
+        html+=`<div class="nl">ToDo</div>`;
+        n.todos.forEach(td=>html+=`<div class="tdrow">${ico("check",16)}<span>${esc(td.text)}${td.who?`　<span class="whotag">担当:${esc(td.who)}</span>`:""}${td.due?`　<span style="color:#8A93A2;font-size:13px">期日 ${fmtMD(td.due)}</span>`:""}　<span style="color:var(--ad);font-size:12px;font-weight:700">タスク登録済み</span></span></div>`);
+      }
+      if(n.memo) html+=`<div class="nl">メモ</div><div class="nb">${esc(n.memo)}</div>`;
+      html+=`<button class="mini" style="margin-top:10px;margin-right:8px" onclick="editNote(${n.id})">編集</button><button class="mini" style="margin-top:10px;margin-right:8px" onclick="printNote(${n.id})">PDF出力</button><button class="mini" style="margin-top:10px;margin-right:8px" onclick="openShareEditor('notes',${n.id})">共有設定</button><button class="mini" style="margin-top:10px" onclick="confirmDel('notes',${n.id})">削除</button></div>`;
+    }
+    html+=`</div>`;
+  });
+  return html;
+}
+
+boot();
+</script>
+</body>
+</html>
