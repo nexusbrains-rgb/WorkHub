@@ -42,6 +42,17 @@
   .err { background:#FBEEEE; border:1px solid #E5C4C4; color:#8A3232; border-radius:10px; padding:13px 15px; font-size:14px; margin-top:12px; }
   .loading { text-align:center; color:var(--gray); padding:50px 0; }
   footer { text-align:center; font-size:12px; color:#AEB7C0; padding:10px; }
+  .meeturl { margin-top:14px; background:#F3FAFA; border:1px solid #CDEBEC; border-radius:10px; padding:12px 16px; text-align:left; }
+  .meeturl .ml { font-size:12px; font-weight:800; color:#078F93; letter-spacing:.06em; margin-bottom:4px; }
+  .meeturl a { color:#078F93; font-weight:700; word-break:break-all; }
+  .gbtn { display:inline-block; margin-top:16px; background:var(--a); color:#fff; border-radius:10px;
+    padding:13px 22px; font-weight:800; text-decoration:none; font-size:15px; }
+  .cnt { font-size:12px; font-weight:800; color:#5B6675; background:#F3F6F8; border-radius:6px; padding:2px 8px; margin-left:10px; vertical-align:1px; }
+  .others { display:flex; flex-wrap:wrap; gap:6px; margin:2px 0 8px; }
+  .oc { font-size:12px; font-weight:700; border-radius:6px; padding:3px 9px; background:#F6F8F9; color:#5B6675; border:1px solid #E4E8EC; }
+  .oc.o-maru { background:#E9F7F0; color:#1B7A4C; border-color:#CDEBDC; }
+  .oc.o-sankaku { background:#FDF6E5; color:#9A6A1F; border-color:#F2E2BC; }
+  .oc.o-batsu { background:#FBEEEE; color:#B44A4A; border-color:#F0D4D4; }
 </style>
 </head>
 <body>
@@ -74,8 +85,32 @@ async function init(){
     if(!data.ok){ throw new Error(data.error==="not_found" ? "この調整は見つかりませんでした（終了した可能性があります）" : "読み込みに失敗しました"); }
     ADJ = data.adj;
     if(ADJ.status !== "調整中"){
+      // 確定済み：会議情報とカレンダー登録リンクを表示
+      let gcal="";
+      if(ADJ.confirmedDate && ADJ.confirmedTime){
+        const ds=ADJ.confirmedDate.replace(/-/g,"");
+        const s=ds+"T"+ADJ.confirmedTime.replace(":","")+"00";
+        let e;
+        if(ADJ.confirmedEnd){ e=ds+"T"+ADJ.confirmedEnd.replace(":","")+"00"; }
+        else{
+          const [h,m]=ADJ.confirmedTime.split(":").map(Number);
+          const mins=h*60+m+(+ADJ.duration||60);
+          e=ds+"T"+String(Math.floor(mins/60)%24).padStart(2,"0")+String(mins%60).padStart(2,"0")+"00";
+        }
+        const u="https://calendar.google.com/calendar/render?action=TEMPLATE"
+          +"&text="+encodeURIComponent(ADJ.title)
+          +"&dates="+s+"/"+e
+          +(ADJ.meetUrl?"&location="+encodeURIComponent(ADJ.meetUrl):"")
+          +"&details="+encodeURIComponent("日程調整により確定した予定です。"+(ADJ.meetUrl?"\n会議URL・場所："+ADJ.meetUrl:""));
+        gcal=`<a class="gbtn" href="${u}" target="_blank" rel="noopener">Googleカレンダーに登録</a>`;
+      }
+      const isLink=/^https?:\/\//.test(ADJ.meetUrl||"");
       app.innerHTML = `<div class="card done"><div class="mark">📅</div><h1>この日程は確定済みです</h1>
-        <div class="meta" style="margin-top:8px">${esc(ADJ.title)}<br>確定日時：${esc(ADJ.confirmed||"")}</div></div>`;
+        <div class="meta" style="margin-top:10px"><b style="font-size:17px;color:#1C242C">${esc(ADJ.title)}</b><br>
+        確定日時：${esc(ADJ.confirmed||"")}${ADJ.duration?`（${ADJ.duration}分）`:""}</div>
+        ${ADJ.meetUrl?`<div class="meeturl"><div class="ml">会議URL・場所</div>${isLink?`<a href="${esc(ADJ.meetUrl)}" target="_blank" rel="noopener">${esc(ADJ.meetUrl)}</a>`:`<div>${esc(ADJ.meetUrl)}</div>`}</div>`:""}
+        ${gcal}
+      </div>`;
       return;
     }
     renderForm();
@@ -96,23 +131,30 @@ function renderForm(){
       ${participants.length?`
         <select id="nameSel">
           <option value="">選択してください</option>
-          ${participants.map(p=>`<option ${answered.includes(p)?"":""}>${esc(p)}</option>`).join("")}
+          ${participants.map(p=>`<option value="${esc(p)}">${esc(p)}${answered.includes(p)?"（回答済み）":""}</option>`).join("")}
           <option value="__other__">その他（名前を入力）</option>
         </select>
         <input id="nameInput" placeholder="お名前を入力" style="display:none;margin-top:8px">`
       :`<input id="nameInput" placeholder="お名前を入力">`}
+      <div class="note" id="restoreNote" style="display:none;color:#078F93;font-weight:700">前回のご回答を表示しています。変更して再送信すると上書きされます。</div>
       <label>各候補のご都合をタップしてください</label>
-      ${ADJ.candidates.map(c=>`
+      ${ADJ.candidates.map(c=>{
+        const rs=(ADJ.responses||[]).map(r=>({name:r.name, v:r.answers[c.id]})).filter(x=>x.v);
+        const cnt={"○":0,"△":0,"×":0};
+        rs.forEach(x=>{ if(cnt[x.v]!==undefined) cnt[x.v]++; });
+        return `
         <div class="cand">
-          <div class="dt">${fmtMD(c.date)} ${c.time}〜</div>
+          <div class="dt">${fmtMD(c.date)} ${c.time}〜${rs.length?`<span class="cnt">○${cnt["○"]}　△${cnt["△"]}　×${cnt["×"]}</span>`:""}</div>
+          ${rs.length?`<div class="others">${rs.map(x=>`<span class="oc ${x.v==="○"?"o-maru":x.v==="△"?"o-sankaku":"o-batsu"}">${esc(x.name)} ${x.v}</span>`).join("")}</div>`:""}
           <div class="opts" data-cid="${c.id}">
             <button class="opt" data-v="○">○</button>
             <button class="opt" data-v="△">△</button>
             <button class="opt" data-v="×">×</button>
           </div>
-        </div>`).join("")}
+        </div>`;
+      }).join("")}
       <button class="send" id="sendBtn" disabled>回答を送信する</button>
-      <div class="note">※ 登録・ログインは不要です。回答は主催者にのみ共有されます。回答をやり直す場合は、同じ名前でもう一度送信してください。</div>
+      <div class="note">※ 登録・ログインは不要です。皆さまのご回答は、この画面と主催者に共有されます。回答をやり直す場合は、同じ名前でもう一度送信してください。</div>
       <div id="errBox"></div>
     </div>`;
 
@@ -121,6 +163,7 @@ function renderForm(){
   if(nameSel){
     nameSel.addEventListener("change", ()=>{
       nameInput.style.display = nameSel.value==="__other__" ? "block" : "none";
+      restoreAnswers(nameSel.value);
       updateSend();
     });
   }
@@ -145,6 +188,21 @@ function currentName(){
   const inp = document.getElementById("nameInput");
   if(sel && sel.value && sel.value!=="__other__") return sel.value;
   return inp ? inp.value.trim() : "";
+}
+
+// 名前を選んだとき、その人の前回回答があればボタンに復元する
+function restoreAnswers(name){
+  const r=(ADJ.responses||[]).find(x=>x.name===name);
+  document.querySelectorAll(".opts").forEach(box=>{
+    const v=r ? r.answers[box.dataset.cid] : null;
+    box.querySelectorAll(".opt").forEach(b=>{
+      b.className = "opt" + (v && b.dataset.v===v ? " " + (v==="○"?"on-maru":v==="△"?"on-sankaku":"on-batsu") : "");
+    });
+    if(v) answers[box.dataset.cid]=v;
+    else delete answers[box.dataset.cid];
+  });
+  const note=document.getElementById("restoreNote");
+  if(note) note.style.display = r ? "block" : "none";
 }
 
 function updateSend(){
