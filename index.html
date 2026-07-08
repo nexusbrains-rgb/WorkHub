@@ -195,6 +195,31 @@
   @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
   /* ===== 空状態のCTA ===== */
   .empty .prim { margin-top:14px; }
+  .namegrid { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .namebtn { border:1.5px solid var(--border); background:#fff; border-radius:10px; padding:11px 17px;
+    font-size:15px; font-weight:700; font-family:inherit; cursor:pointer; color:#1C242C; }
+  .namebtn:hover { border-color:var(--a); background:var(--as); }
+  /* ===== 週表示 ===== */
+  .weekwrap { border:1px solid var(--border); border-radius:14px; background:#fff; overflow:hidden; margin-bottom:18px; }
+  .wday { display:flex; border-bottom:1px solid #F1F4F6; }
+  .wday:last-child { border-bottom:none; }
+  .wday.wtoday { background:#F3FBFB; }
+  .wday.wsel .wdate { color:var(--ad); }
+  .wdate { width:128px; flex-shrink:0; border:none; background:none; text-align:left; padding:12px 14px;
+    font-family:inherit; font-size:14px; font-weight:800; cursor:pointer; display:flex; flex-direction:column; gap:2px; align-items:flex-start; }
+  .wbody { flex:1; padding:9px 14px 9px 0; min-width:0; }
+  .wrow { display:flex; gap:10px; align-items:baseline; padding:3px 0; font-size:14px; min-width:0; }
+  .wrow .wt { color:var(--ad); font-weight:800; font-size:13px; flex-shrink:0; min-width:86px; }
+  .wrow.tk .wt { color:#D96C30; }
+  .wrow .wn { font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .wempty { color:#C6CDD4; font-size:13px; padding:3px 0; }
+  @media (max-width:700px){
+    .wdate { width:96px; padding:10px 10px; font-size:13px; }
+    .wrow .wt { min-width:72px; font-size:12px; }
+  }
+  mark { background:#FFE9A8; color:inherit; padding:0 2px; border-radius:3px; }
+  .linkmini { border:none; background:none; color:var(--ad); font-weight:800; font-size:12px; cursor:pointer;
+    font-family:inherit; padding:0; text-decoration:underline; }
 
   .searchbar { display:flex; gap:8px; margin-bottom:14px; }
   .searchbar input { margin-top:0; flex:1; }
@@ -328,7 +353,11 @@ const HOLIDAYS={
 "2027-01-01":"元日","2027-01-11":"成人の日","2027-02-11":"建国記念の日","2027-02-23":"天皇誕生日","2027-03-21":"春分の日",
 "2027-03-22":"振替休日","2027-04-29":"昭和の日","2027-05-03":"憲法記念日","2027-05-04":"みどりの日","2027-05-05":"こどもの日",
 "2027-07-19":"海の日","2027-08-11":"山の日","2027-09-20":"敬老の日","2027-09-23":"秋分の日","2027-10-11":"スポーツの日",
-"2027-11-03":"文化の日","2027-11-23":"勤労感謝の日"};
+"2027-11-03":"文化の日","2027-11-23":"勤労感謝の日",
+"2028-01-01":"元日","2028-01-10":"成人の日","2028-02-11":"建国記念の日","2028-02-23":"天皇誕生日","2028-03-20":"春分の日",
+"2028-04-29":"昭和の日","2028-05-03":"憲法記念日","2028-05-04":"みどりの日","2028-05-05":"こどもの日","2028-07-17":"海の日",
+"2028-08-11":"山の日","2028-09-18":"敬老の日","2028-09-22":"秋分の日","2028-10-09":"スポーツの日","2028-11-03":"文化の日",
+"2028-11-23":"勤労感謝の日"};
 
 // ================= データ層（GAS連携／未設定時はこのPC内に保存） =================
 let S = { events:[], tasks:[], notes:[], adjustments:[], members:[] };
@@ -650,16 +679,58 @@ function showUserPicker(first){
   ov.className = "overlay";
   if(first) ov.dataset.must="1";
   const parts = (CURRENT_USER||"").split(" ");
+  const names=[...new Set((S.members||[]).filter(m=>!m.guest&&m.name).map(m=>m.name))].sort();
   ov.innerHTML = `<div class="modal">
-    <h2>お名前を入力してください</h2>
-    <p>フルネームで入力してください。タスクの担当者や議事録の作成者として表示されます。${first?"（次回からは自動で表示されます）":""}</p>
+    <h2>${names.length?"お名前を選んでください":"お名前を入力してください"}</h2>
+    ${names.length?`<p>登録済みの方は、自分の名前をタップしてください。</p>
+      <div class="namegrid">${names.map(n=>`<button class="namebtn" data-n="${esc(n)}">${esc(n)}</button>`).join("")}</div>
+      <div class="seclabel" style="margin-top:4px">初めての方（新規登録）</div>`
+    :`<p>フルネームで入力してください。タスクの担当者や議事録の作成者として表示されます。${first?"（次回からは自動で表示されます）":""}</p>`}
     <div class="row" style="margin-bottom:14px">
-      <label style="margin-bottom:0">姓<input id="up_sei" placeholder="例）山田" value="${esc(parts[0]||"")}"></label>
-      <label style="margin-bottom:0">名<input id="up_mei" placeholder="例）太郎" value="${esc(parts[1]||"")}"></label>
+      <label style="margin-bottom:0">姓<input id="up_sei" placeholder="例）山田" value="${esc(names.length?"":(parts[0]||""))}"></label>
+      <label style="margin-bottom:0">名<input id="up_mei" placeholder="例）太郎" value="${esc(names.length?"":(parts[1]||""))}"></label>
     </div>
-    <button class="prim" id="up_start" style="width:100%">はじめる</button>
-    ${first||!isAdmin()?"":`<button class="ghost" id="up_mgr" style="width:100%;margin-top:8px">${ico("sliders",15)} メンバーの管理（改名・削除など／管理者のみ）</button>`}
+    <button class="prim" id="up_start" style="width:100%">${names.length?"新規登録してはじめる":"はじめる"}</button>
+    ${names.length?`<div class="note-small" style="margin-top:8px">※ 新規登録は初めての方だけご利用ください。同じ人の名前が二重に登録されると、共有先の候補が増えて分かりにくくなります。</div>`:""}
+    ${first?"":`
+      <div class="seclabel" style="margin-top:18px">通知用メールアドレス（任意）</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="up_mail" type="email" placeholder="例）taro@example.com" value="${esc(((S.members||[]).find(m=>m.name===CURRENT_USER)||{}).email||"")}" style="margin-top:0;flex:1">
+        <button class="ghost" id="up_mailsave" style="margin:0;flex-shrink:0">保存</button>
+      </div>
+      <div class="note-small">毎朝のまとめメール通知に使われます（管理者が通知機能を設定している場合）。空にして保存すると通知は届きません。</div>
+      <div class="seclabel" style="margin-top:14px">カレンダーの週の始まり</div>
+      <select id="up_wstart" style="margin-top:0">
+        <option value="sun" ${weekStart()===0?"selected":""}>日曜はじまり</option>
+        <option value="mon" ${weekStart()===1?"selected":""}>月曜はじまり</option>
+      </select>`}
+    ${first||!isAdmin()?"":`<button class="ghost" id="up_mgr" style="width:100%;margin-top:12px">${ico("sliders",15)} メンバーの管理（改名・削除など／管理者のみ）</button>`}
   </div>`;
+  const mailBtn=ov.querySelector("#up_mailsave");
+  if(mailBtn) mailBtn.addEventListener("click",()=>{
+    const v=ov.querySelector("#up_mail").value.trim();
+    if(v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){ notify("メールアドレスの形式が正しくありません", true); return; }
+    const m=(S.members||[]).find(x=>x.name===CURRENT_USER);
+    if(!m){ notify("先に名前を登録してください", true); return; }
+    m.email=v;
+    persist("members", m);
+    notify(v?"通知用メールアドレスを保存しました":"メールアドレスを削除しました（通知は届きません）");
+  });
+  const wsSel=ov.querySelector("#up_wstart");
+  if(wsSel) wsSel.addEventListener("change",()=>{
+    try{ localStorage.setItem("workhub_weekstart", wsSel.value); }catch(e){}
+    render();
+    notify(`カレンダーを${wsSel.value==="mon"?"月曜":"日曜"}はじまりにしました`);
+  });
+  ov.querySelectorAll(".namebtn").forEach(b=>b.addEventListener("click",()=>{
+    CURRENT_USER=b.dataset.n;
+    localStorage.setItem("workhub_user", CURRENT_USER);
+    registerMember();
+    updateUserBtn();
+    ov.remove();
+    render();
+    notify(`ようこそ、${CURRENT_USER}さん`);
+  }));
   const mgrBtn=ov.querySelector("#up_mgr");
   if(mgrBtn) mgrBtn.addEventListener("click",()=>{ ov.remove(); openMemberManager(); });
   ov.querySelector("#up_start").addEventListener("click", ()=>{
@@ -696,6 +767,16 @@ let openAdj=null, openNote=null;
 let appUI={ev:null, task:null, adj:null, note:null, resp:null};
 // ===== 検索・絞り込み状態 =====
 let FLT={taskQ:"", taskWho:"", noteQ:"", adjQ:"", showDone:false};
+
+// 検索ハイライト：一致箇所を<mark>で強調（escape後に適用）
+function hl(s,q){
+  const e=esc(s);
+  q=(q||"").trim();
+  if(!q) return e;
+  const eq=esc(q).replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+  try{ return e.replace(new RegExp(eq,"gi"), m=>`<mark>${m}</mark>`); }catch(_){ return e; }
+}
+
 const hitQ=(q,...fields)=>{ q=(q||"").trim().toLowerCase(); if(!q) return true; return fields.some(f=>String(f||"").toLowerCase().includes(q)); };
 
 // ===== 新着回答の既読管理（この端末ごと） =====
@@ -912,7 +993,7 @@ function saveNote(){
     if(t.tid) return;
     const task={id:uid(), title:t.text, due:t.due||addDays(T,7),
       alert:t.due?addDays(t.due,-7):toISO(T), memo:`「${title}」より自動登録`, done:false, from:"note", assignee:t.who,
-      createdBy:CURRENT_USER, shared:false};
+      noteId:note.id, createdBy:CURRENT_USER, shared:false};
     S.tasks.push(task);
     persist("tasks", task);
     t.tid=task.id;
@@ -926,6 +1007,14 @@ function saveNote(){
     ? (newTasks>0?`議事録を更新し、新しいToDo ${newTasks}件をタスクに登録しました`:"議事録を更新しました")
     : (newTasks>0?`議事録を保存し、ToDo ${newTasks}件を担当者のタスクに自動登録しました`:"議事録を保存しました"));
 }
+
+function openNoteFromTask(noteId){
+  FLT.noteQ="";
+  openNote=noteId;
+  go("notes");
+  setTimeout(()=>{const c=document.querySelector(".chead");},50);
+}
+
 function editNote(id){
   const n=S.notes.find(x=>x.id===id); if(!n) return;
   if(n.createdBy && n.createdBy!==CURRENT_USER){ notify("編集できるのは作成者のみです", true); return; }
@@ -1038,7 +1127,7 @@ function refreshTodoWho(){
 }
 function candRowHtml(c){
   c=c||{};
-  return `<div class="todo-line cand-line" data-cid="${esc(c.cid||"")}"><input type="date" value="${c.date||""}" style="margin-top:0;flex:1">${timeSelectHtml(c.time)}</div>`;
+  return `<div class="todo-line cand-line" data-cid="${esc(c.cid||"")}"><input type="date" value="${c.date||""}" min="${toISO(T)}" style="margin-top:0;flex:1">${timeSelectHtml(c.time)}</div>`;
 }
 function addCandRow(){
   const lines=[...document.querySelectorAll("#af_cands .cand-line")];
@@ -1093,6 +1182,15 @@ function copyInvite(adjId){
   const cands=(adj.candidates||[]).map(c=>`・${fmtMD(c.date)} ${c.time}〜（${adj.duration}分）`).join("\n");
   copyText(`【日程調整のお願い】${adj.title}\nお世話になっております。\n下記の候補からご都合のよい日時をご回答いただけますでしょうか。\n\n▼候補日時\n${cands}\n\n▼ご回答はこちら（タップで開けます）\n${answerUrlOf(adj)}`);
 }
+// 催促文コピー（未回答者の名前入り）
+function copyRemind(adjId){
+  const adj=S.adjustments.find(a=>a.id===adjId); if(!adj) return;
+  const answered=new Set((adj.responses||[]).map(r=>r.name));
+  const pending=(adj.participants||[]).filter(p=>!answered.has(p));
+  if(pending.length===0){ notify("全員から回答が届いています"); return; }
+  const cands=(adj.candidates||[]).map(c=>`・${fmtMD(c.date)} ${c.time}〜（${adj.duration}分）`).join("\n");
+  copyText(`【リマインド】${adj.title}（日程調整のお願い）\n${pending.map(p=>`${p}様`).join("、")}\n\nお忙しいところ恐れ入ります。\n下記の日程調整がまだご回答いただけておりませんので、お手すきの際にご回答をお願いいたします。\n\n▼候補日時\n${cands}\n\n▼ご回答はこちら（タップで開けます）\n${answerUrlOf(adj)}`);
+}
 // 確定案内文つきコピー
 function copyConfirmMsg(adjId){
   const adj=S.adjustments.find(a=>a.id===adjId); if(!adj) return;
@@ -1124,14 +1222,63 @@ function tasksByDate(){
   return map;
 }
 
+// カレンダー表示設定：週の始まり（日曜/月曜）と 月/週 表示モード
+function weekStart(){ return localStorage.getItem("workhub_weekstart")==="mon" ? 1 : 0; }
+let CAL_MODE = localStorage.getItem("workhub_calmode")==="week" ? "week" : "month";
+function setCalMode(m){ CAL_MODE=m; try{ localStorage.setItem("workhub_calmode", m); }catch(e){} render(); }
+
+// 週表示：選択日を含む1週間のアジェンダ
+function weekPanelHtml(){
+  const ws=weekStart();
+  const base=new Date(selDate+"T00:00:00");
+  const off=(base.getDay()-ws+7)%7;
+  const start=new Date(base); start.setDate(base.getDate()-off);
+  const end=new Date(start); end.setDate(start.getDate()+6);
+  const byDate=eventsByDate();
+  const tByDate=tasksByDate();
+  let html=`<div class="calhead">
+    <button class="arr" onclick="selDate=addDays(selDate,-7);render()">‹</button>
+    <b>${start.getMonth()+1}/${start.getDate()} 〜 ${end.getMonth()+1}/${end.getDate()}</b>
+    <span style="display:flex;gap:6px">
+      <button class="arr" onclick="selDate=addDays(selDate,7);render()">›</button>
+      <button class="todaybtn" onclick="selDate=toISO(T);viewMonth={y:T.getFullYear(),m:T.getMonth()};render()">今日</button>
+      <button class="todaybtn" style="color:#5B6675" onclick="setCalMode('month')">月表示へ</button>
+    </span>
+  </div><div class="weekwrap">`;
+  for(let i=0;i<7;i++){
+    const d=new Date(start); d.setDate(start.getDate()+i);
+    const iso=toISO(d);
+    const wd=d.getDay();
+    const hol=HOLIDAYS[iso];
+    const evs=(byDate[iso]||[]).slice().sort((a,b)=>(a.start||"").localeCompare(b.start||""));
+    const tks=tByDate[iso]||[];
+    html+=`<div class="wday ${iso===toISO(T)?"wtoday":""} ${iso===selDate?"wsel":""}">
+      <button class="wdate" onclick="selDate='${iso}';render()">
+        <span class="${hol?"dhol":wd===0?"dsun":wd===6?"dsat":""}">${d.getMonth()+1}/${d.getDate()}（${WD[wd]}）</span>
+        ${hol?`<span class="holname" style="width:auto;flex-shrink:0">${esc(hol)}</span>`:""}
+      </button>
+      <div class="wbody">
+        ${evs.length===0&&tks.length===0?`<div class="wempty">−</div>`:""}
+        ${evs.map(e=>`<div class="wrow">${e.start?`<span class="wt">${e.start}${e.end?`〜${e.end}`:""}</span>`:""}<span class="wn">${esc(e.title)}</span></div>`).join("")}
+        ${tks.map(t=>`<div class="wrow tk"><span class="wt">〆切</span><span class="wn">${esc(t.title)}</span></div>`).join("")}
+      </div>
+    </div>`;
+  }
+  html+=`</div>`;
+  return html;
+}
+
 function calPanelHtml(compact){
+  if(!compact && CAL_MODE==="week") return weekPanelHtml();
+  const ws=weekStart();
   const first=new Date(viewMonth.y,viewMonth.m,1);
   const last=new Date(viewMonth.y,viewMonth.m+1,0).getDate();
   const byDate=eventsByDate();
   const tByDate=tasksByDate();
   let cal="";
-  WD.forEach((w,i)=>cal+=`<div class="calw ${i===0?"sun":i===6?"sat":""}">${w}</div>`);
-  for(let i=0;i<first.getDay();i++) cal+=`<div></div>`;
+  for(let i=0;i<7;i++){ const w=(ws+i)%7; cal+=`<div class="calw ${w===0?"sun":w===6?"sat":""}">${WD[w]}</div>`; }
+  const blanks=(first.getDay()-ws+7)%7;
+  for(let i=0;i<blanks;i++) cal+=`<div></div>`;
   for(let d=1;d<=last;d++){
     const iso=toISO(new Date(viewMonth.y,viewMonth.m,d));
     const wd=(first.getDay()+d-1)%7;
@@ -1155,6 +1302,7 @@ function calPanelHtml(compact){
     <span style="display:flex;gap:6px">
       <button class="arr" onclick="viewMonth.m===11?(viewMonth={y:viewMonth.y+1,m:0}):(viewMonth.m++);render()">›</button>
       <button class="todaybtn" onclick="viewMonth={y:T.getFullYear(),m:T.getMonth()};selDate=toISO(T);render()">今日</button>
+      ${compact?"":`<button class="todaybtn" style="color:#5B6675" onclick="setCalMode('week')">週表示へ</button>`}
     </span>
   </div><div class="cal ${compact?"":"full"}">${cal}</div>`;
   const dayEvents=byDate[selDate]||[];
@@ -1423,7 +1571,7 @@ function adjListHtml(){
     if(open) markRespSeen(adj);
     html+=`<div class="card"><button class="chead" onclick="openAdj=${open?"null":adj.id};render()">
       <span class="tag ${adj.status==="確定"?"tagD":"tagP"}">${adj.status}</span>
-      <span class="title">${esc(adj.title)} ${shareTag(adj)}</span>${!open&&newN>0?`<span class="respnew">新着回答${newN}</span>`:""}<span style="color:#AEB7C0">${open?"▲":"▼"}</span></button>`;
+      <span class="title">${hl(adj.title,FLT.adjQ)} ${shareTag(adj)}</span>${adj.status==="調整中"?`<span class="anscnt" style="margin-left:0;flex-shrink:0">回答 ${(adj.responses||[]).length}/${(adj.participants||[]).length}</span>`:""}${!open&&newN>0?`<span class="respnew">新着回答${newN}</span>`:""}<span style="color:#AEB7C0">${open?"▲":"▼"}</span></button>`;
     if(open){
       const answered=(adj.responses||[]).map(r=>r.name);
       html+=`<div style="padding:0 18px 18px"><div class="meta">所要 ${adj.duration}分 ｜ 回答 ${answered.length}名${adj.status==="確定"?` ｜ 確定：${adj.confirmed}`:""}</div>
@@ -1435,8 +1583,10 @@ function adjListHtml(){
       }
       const url=REMOTE ? answerUrlOf(adj) : "";
       if(url && adj.status==="調整中"){
+        const pendingN=(adj.participants||[]).filter(p=>!(adj.responses||[]).some(r=>r.name===p)).length;
         html+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 8px">
           <button class="confirm" onclick="copyInvite(${adj.id})">${ico("mail",14)} 依頼文つきでコピー</button>
+          ${pendingN>0&&(adj.responses||[]).length>0?`<button class="miniA" onclick="copyRemind(${adj.id})">催促文をコピー（未回答${pendingN}名）</button>`:""}
           <button class="miniA" onclick="copyUrl(${adj.id})">URLのみコピー</button></div>
           <div class="urlrow" style="margin-top:0"><input readonly value="${esc(url)}" onclick="this.select()"></div>`;
       }
@@ -1505,6 +1655,12 @@ function createAdj(){
   });
   if(!title){ fieldError("af_title","件名を入力してください"); return; }
   if(cands.length===0){ fieldError("af_cands","候補日時を1件以上入力してください（日付と時刻の両方）"); return; }
+  // 新しく追加した候補（既存IDを持たないもの）に過去の日付が含まれていないか
+  const today=toISO(T);
+  const existingIds=new Set(((appUI.adj&&appUI.adj.editId?S.adjustments.find(a=>a.id===appUI.adj.editId):null)||{candidates:[]}).candidates.map(c=>c.id));
+  if(cands.some(c=>!existingIds.has(c.id) && c.date<today)){
+    fieldError("af_cands","過去の日付が候補に含まれています。今日以降の日付を選んでください"); return;
+  }
   if(participants.length===0){ fieldError("af_parts","回答してもらう相手を1名以上選択してください"); return; }
   const shA=readShare("af");
   rememberShareDef("adj", shA.shareMode);
@@ -1581,7 +1737,7 @@ function renderSchedule(){
       ${e.place?`<div class="place">${ico("pin",13)} ${esc(e.place)}</div>`:""}</div>
       <div class="btncol"><button class="miniA" onclick="createNoteFromEvent(${e.id})">議事録作成</button>
       <button class="mini" onclick="editEvent(${e.id})">編集</button>
-      ${kebabHtml([["共有設定",`openShareEditor('events',${e.id})`],["削除",`confirmDel('events',${e.id})`,true]])}</div></div>`;
+      ${kebabHtml([["Googleカレンダーに登録",`openGcal(${e.id})`],["共有設定",`openShareEditor('events',${e.id})`],["削除",`confirmDel('events',${e.id})`,true]])}</div></div>`;
   });
   dayTasks.forEach(t=>{
     html+=`<div class="ev" style="cursor:pointer;background:#FFFDF8" onclick="go('tasks')">
@@ -1640,6 +1796,30 @@ function addMonthsIso(iso,k){
   nd.setDate(Math.min(d,lastDay));
   return toISO(nd);
 }
+
+// Googleカレンダーに登録（URL方式・認証不要）
+function openGcal(id){
+  const e=S.events.find(x=>x.id===id); if(!e) return;
+  const ds=(e.date||"").replace(/-/g,"");
+  let dates;
+  if(e.start){
+    const s=ds+"T"+e.start.replace(":","")+"00";
+    let endT=e.end;
+    if(!endT){ const [h,m]=e.start.split(":").map(Number); endT=`${pad((h+1)%24)}:${pad(m)}`; }
+    dates=s+"/"+ds+"T"+endT.replace(":","")+"00";
+  } else {
+    // 終日
+    const nd=addDays(e.date,1).replace(/-/g,"");
+    dates=ds+"/"+nd;
+  }
+  const u="https://calendar.google.com/calendar/render?action=TEMPLATE"
+    +"&text="+encodeURIComponent(e.title)
+    +"&dates="+dates
+    +(e.place?"&location="+encodeURIComponent(e.place):"")
+    +"&details="+encodeURIComponent("WorkHubから登録した予定です。");
+  window.open(u,"_blank");
+}
+
 function editEvent(id){
   const e=S.events.find(x=>x.id===id); if(!e) return;
   if(e.createdBy && e.createdBy!==CURRENT_USER){ notify("編集できるのは作成者のみです", true); return; }
@@ -1687,8 +1867,8 @@ function taskCardHtml(t){
   return `<div class="card task ${t.done?"done":""}">
     <input type="checkbox" class="tchk" title="${t.done?"未完了に戻す":"完了にする"}" ${t.done?"checked":""} onclick="toggleTask(${t.id})">
     <span class="badge" style="background:${bg};color:${color}">${text}</span>
-    <div style="flex:1;min-width:0"><div class="tname">${esc(t.title)}${t.assignee?` <span class="whotag">担当:${esc(t.assignee)}</span>`:""}${t.from==="note"?` <span class="autotag">議事録から自動登録</span>`:""}${shareTag(t)}</div>
-    <div class="tmeta">期日 ${fmtMD(t.due)} ｜ アラート ${fmtMD(t.alert)}</div>
+    <div style="flex:1;min-width:0"><div class="tname">${hl(t.title,FLT.taskQ)}${t.assignee?` <span class="whotag">担当:${esc(t.assignee)}</span>`:""}${t.from==="note"?` <span class="autotag">議事録から自動登録</span>`:""}${shareTag(t)}</div>
+    <div class="tmeta">期日 ${fmtMD(t.due)} ｜ アラート ${fmtMD(t.alert)}${t.noteId?` ｜ <button class="linkmini" onclick="openNoteFromTask(${t.noteId})">元の議事録を見る</button>`:""}</div>
     ${t.memo?`<div class="tmemo">${esc(t.memo)}</div>`:""}</div>
     <div class="btncol"><button class="mini" onclick="editTask(${t.id})">編集</button>
     ${kebabHtml([["共有設定",`openShareEditor('tasks',${t.id})`],["削除",`confirmDel('tasks',${t.id})`,true]])}</div></div>`;
@@ -1699,6 +1879,7 @@ function kebabHtml(items){
   return `<div class="kebabwrap"><button class="mini" onclick="toggleKebab(event,this)">${ico("dots",15)}</button>
     <div class="kmenu">${items.map(([label,fn,danger])=>`<button class="${danger?"kdanger":""}" onclick="this.closest('.kmenu').classList.remove('open');${fn}">${label}</button>`).join("")}</div></div>`;
 }
+let KEBAB_OPENED_AT=0;
 function toggleKebab(e,btn){
   e.stopPropagation();
   const menu=btn.nextElementSibling;
@@ -1706,6 +1887,7 @@ function toggleKebab(e,btn){
   document.querySelectorAll(".kmenu.open").forEach(m=>m.classList.remove("open"));
   if(wasOpen) return;
   menu.classList.add("open");
+  KEBAB_OPENED_AT=Date.now();
   // カードの overflow:hidden で切れないよう、ボタン位置基準の固定配置で表示する
   const r=btn.getBoundingClientRect();
   menu.style.position="fixed";
@@ -1721,7 +1903,10 @@ function toggleKebab(e,btn){
   });
 }
 document.addEventListener("click", ()=>document.querySelectorAll(".kmenu.open").forEach(m=>m.classList.remove("open")));
-window.addEventListener("scroll", ()=>document.querySelectorAll(".kmenu.open").forEach(m=>m.classList.remove("open")), true);
+window.addEventListener("scroll", ()=>{
+  if(Date.now()-KEBAB_OPENED_AT<400) return; // タップ直後の自動スクロールでは閉じない
+  document.querySelectorAll(".kmenu.open").forEach(m=>m.classList.remove("open"));
+}, true);
 
 function taskListHtml(){
   let all=visTasks().filter(t=>hitQ(FLT.taskQ, t.title, t.memo, t.assignee));
@@ -1744,6 +1929,7 @@ function toggleTask(id){
   x.done=!x.done;
   persist("tasks", x);
   render();
+  notify(x.done?`「${x.title}」を完了にしました（一覧下の「完了済み」に移動しました）`:`「${x.title}」を未完了に戻しました`);
 }
 
 function addTask(){
@@ -1828,7 +2014,7 @@ function noteListHtml(){
     const open=openNote===n.id;
     html+=`<div class="card"><button class="chead" onclick="openNote=${open?"null":n.id};render()">
       <span style="font-size:14px;color:var(--gray);flex-shrink:0">${fmtMD(n.date)}${n.start?` ${n.start}${n.end?`〜${n.end}`:""}`:""}</span>
-      <span class="title">${esc(n.title)} ${shareTag(n)}</span>${n.author?`<span class="whotag">${esc(n.author)}</span>`:""}<span style="color:#AEB7C0">${open?"▲":"▼"}</span></button>`;
+      <span class="title">${hl(n.title,FLT.noteQ)} ${shareTag(n)}</span>${n.author?`<span class="whotag">${esc(n.author)}</span>`:""}<span style="color:#AEB7C0">${open?"▲":"▼"}</span></button>`;
     if(open){
       html+=`<div style="padding:0 18px 18px">`;
       if((n.participants||[]).length) html+=`<div class="nl">参加者</div><div class="nb">${n.participants.map(esc).join("、")}</div>`;
@@ -1845,6 +2031,11 @@ function noteListHtml(){
   return html;
 }
 
+
+// Service Worker登録（オフライン起動・高速化。ローカル/お試し環境では自動的にスキップ）
+if("serviceWorker" in navigator && location.protocol==="https:"){
+  navigator.serviceWorker.register("./sw.js").catch(()=>{});
+}
 boot();
 </script>
 </body>
