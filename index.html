@@ -662,11 +662,11 @@ function toggleGuestFlag(id){
 function resetPin(id){
   if(!isAdmin()){ notify(`メンバーの管理は管理者のみが行えます（管理者：${(CONFIG.admins||[]).join("、")}）`, true); return; }
   const m=findMember(id); if(!m) return;
-  if(!confirm(`「${m.name}」のPINを解除します。本人がPINを忘れた場合などに使ってください。よろしいですか？`)) return;
+  if(!confirm(`「${m.name}」のPINをリセットします。本人がPINを忘れた場合に使ってください。\nリセット後、本人が次に名前を選ぶときに新しいPINの設定を求められます。よろしいですか？`)) return;
   m.pin="";
   persist("members", m);
   redrawMemberMgr(); render();
-  notify("PINを解除しました。本人が利用者設定から再設定できます");
+  notify("PINをリセットしました。本人が次回、名前を選ぶ際に再設定します");
 }
 function delMember(id){
   if(!isAdmin()){ notify(`メンバーの管理は管理者のみが行えます（管理者：${(CONFIG.admins||[]).join("、")}）`, true); return; }
@@ -695,6 +695,45 @@ function addMemberFromMgr(){
   notify(`「${name}」を${guest?"ゲスト":"社員"}として登録しました`);
 }
 
+// PIN未設定の名前を初めて使うときの必須設定（PIN・メールアドレス）
+function openFirstSetup(name, parentOv){
+  const ov=document.createElement("div");
+  ov.className="overlay";
+  ov.dataset.must="1";
+  ov.innerHTML=`<div class="modal">
+    <h2>初回設定</h2>
+    <p><b>${esc(name)}</b>さんとして利用を開始します。<b>ご本人のみ</b>設定を行ってください。<br>PINとメールアドレスの設定が必須です。</p>
+    <label>PIN（4桁の数字）<span class="req">必須</span><input id="fs_pin" type="password" inputmode="numeric" maxlength="4" placeholder="例）1234"></label>
+    <label>通知用メールアドレス<span class="req">必須</span><input id="fs_mail" type="email" placeholder="例）taro@example.com"></label>
+    <div class="note-small" style="margin-bottom:14px">次回からは、どの端末でもこのPINであなたの名前を選べます（他の人には使えなくなります）。</div>
+    <div style="display:flex;gap:10px">
+      <button class="prim" id="fs_ok" style="flex:1">設定して開始</button>
+      <button class="ghost" id="fs_cancel">戻る</button>
+    </div>
+  </div>`;
+  ov.querySelector("#fs_cancel").addEventListener("click",()=>ov.remove());
+  ov.querySelector("#fs_ok").addEventListener("click",()=>{
+    const pin=ov.querySelector("#fs_pin").value.trim();
+    const mail=ov.querySelector("#fs_mail").value.trim();
+    if(!/^\d{4}$/.test(pin)){ notify("PINは4桁の数字で入力してください", true); return; }
+    if(!mail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)){ notify("メールアドレスを正しく入力してください", true); return; }
+    const m=(S.members||[]).find(x=>x.name===name);
+    if(!m){ notify("メンバーが見つかりません", true); ov.remove(); return; }
+    m.pin=pin;
+    m.email=m.email||mail;
+    if(mail) m.email=mail;
+    persist("members", m);
+    CURRENT_USER=name;
+    localStorage.setItem("workhub_user", CURRENT_USER);
+    updateUserBtn();
+    ov.remove();
+    if(parentOv) parentOv.remove();
+    render();
+    notify(`ようこそ、${CURRENT_USER}さん。PINとメールアドレスを設定しました`);
+  });
+  document.body.appendChild(ov);
+}
+
 function showUserPicker(first){
   const ov = document.createElement("div");
   ov.className = "overlay";
@@ -708,27 +747,26 @@ function showUserPicker(first){
     ov.innerHTML = `<div class="modal">
       <h2>利用者設定</h2>
       <div class="seclabel" style="margin-top:0">この端末の利用者</div>
-      <div style="font-size:18px;font-weight:800;margin-bottom:4px">${esc(CURRENT_USER)}</div>
-      <div class="note-small" style="margin:0 0 14px">なりすまし防止のため、この画面から他の人の名前には切り替えられません。氏名の変更は管理者（メンバーの管理→改名）にご依頼ください。</div>
-      <div class="seclabel">かんたんPIN（任意・4〜8桁の数字）</div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:14px">${esc(CURRENT_USER)}</div>
+      <div class="seclabel">PIN（4桁の数字・必須）</div>
       <div style="display:flex;gap:8px;align-items:center">
-        <input id="up_pin" type="password" inputmode="numeric" placeholder="${me&&me.pin?"設定済み（変更する場合は入力）":"未設定"}" style="margin-top:0;flex:1">
+        <input id="up_pin" type="password" inputmode="numeric" maxlength="4" placeholder="${me&&me.pin?"設定済み（変更する場合は新しい4桁を入力）":"未設定：4桁を入力して保存してください"}" style="margin-top:0;flex:1">
         <button class="ghost" id="up_pinsave" style="margin:0;flex-shrink:0">保存</button>
       </div>
-      <div class="note-small">設定すると、新しい端末であなたの名前を選ぶときにPINの入力が必要になり、他の人があなたの名前を使うことを防げます。空にして保存すると解除されます。</div>
-      <div class="seclabel" style="margin-top:14px">通知用メールアドレス（任意）</div>
+      <div class="note-small">どの端末でも、あなたの名前を選ぶときにこのPINが必要になります。忘れた場合は管理者がリセットできます。</div>
+      <div class="seclabel" style="margin-top:14px">通知用メールアドレス（必須）</div>
       <div style="display:flex;gap:8px;align-items:center">
         <input id="up_mail" type="email" placeholder="例）taro@example.com" value="${esc((me||{}).email||"")}" style="margin-top:0;flex:1">
         <button class="ghost" id="up_mailsave" style="margin:0;flex-shrink:0">保存</button>
       </div>
-      <div class="note-small">毎朝のまとめ・日程確定の通知に使われます。空にして保存すると通知は届きません。</div>
+      <div class="note-small">毎朝のまとめ・日程確定の通知に使われます。</div>
       <div class="seclabel" style="margin-top:14px">カレンダーの週の始まり</div>
       <select id="up_wstart" style="margin-top:0">
         <option value="sun" ${weekStart()===0?"selected":""}>日曜はじまり</option>
         <option value="mon" ${weekStart()===1?"selected":""}>月曜はじまり</option>
       </select>
       ${isAdmin()?`<button class="ghost" id="up_mgr" style="width:100%;margin-top:14px">${ico("sliders",15)} メンバーの管理（改名・削除・PIN解除／管理者のみ）</button>`:""}
-      <button class="ghost" id="up_switch" style="width:100%;margin-top:8px;color:#8A93A2">この端末の利用者を切り替える（共有PC用）</button>
+      <button class="ghost" id="up_switch" style="width:100%;margin-top:8px;color:#8A93A2">この端末の利用者を切り替える（切替先のPINが必要です）</button>
       <button class="prim" style="width:100%;margin-top:8px" onclick="this.closest('.overlay').remove()">閉じる</button>
     </div>`;
   } else {
@@ -739,10 +777,15 @@ function showUserPicker(first){
         <div class="namegrid">${names.map(n=>`<button class="namebtn" data-n="${esc(n)}">${esc(n)}${((S.members||[]).find(m=>m.name===n)||{}).pin?" 🔒":""}</button>`).join("")}</div>
         <div class="seclabel" style="margin-top:4px">初めての方（新規登録）</div>`
       :`<p>フルネームで入力してください。タスクの担当者や議事録の作成者として表示されます。（次回からは自動で表示されます）</p>`}
-      <div class="row" style="margin-bottom:14px">
-        <label style="margin-bottom:0">姓<input id="up_sei" placeholder="例）山田"></label>
-        <label style="margin-bottom:0">名<input id="up_mei" placeholder="例）太郎"></label>
+      <div class="row" style="margin-bottom:10px">
+        <label style="margin-bottom:0">姓<span class="req">必須</span><input id="up_sei" placeholder="例）山田"></label>
+        <label style="margin-bottom:0">名<span class="req">必須</span><input id="up_mei" placeholder="例）太郎"></label>
       </div>
+      <div class="row" style="margin-bottom:14px">
+        <label style="margin-bottom:0">PIN（4桁の数字）<span class="req">必須</span><input id="up_newpin" type="password" inputmode="numeric" maxlength="4" placeholder="例）1234"></label>
+        <label style="margin-bottom:0">通知用メールアドレス<span class="req">必須</span><input id="up_newmail" type="email" placeholder="例）taro@example.com"></label>
+      </div>
+      <div class="note-small" style="margin:-6px 0 12px">PINは名前の乗っ取り防止に、メールアドレスは予定・確定の通知に使われます。</div>
       <button class="prim" id="up_start" style="width:100%">${names.length?"新規登録してはじめる":"はじめる"}</button>
       ${names.length?`<div class="note-small" style="margin-top:8px">※ 新規登録は初めての方だけご利用ください。すでに登録済みの方が別名で登録すると、名簿が二重になります。</div>`:""}
     </div>`;
@@ -750,32 +793,33 @@ function showUserPicker(first){
       const name=b.dataset.n;
       const m=(S.members||[]).find(x=>x.name===name);
       if(m && m.pin){
-        const input=prompt(`「${name}」さんのかんたんPIN（数字）を入力してください`);
+        const input=prompt(`「${name}」さんのPIN（4桁）を入力してください`);
         if(input===null) return;
         if(String(input).trim()!==String(m.pin)){ notify("PINが一致しません", true); return; }
+        CURRENT_USER=name;
+        localStorage.setItem("workhub_user", CURRENT_USER);
+        updateUserBtn();
+        ov.remove();
+        render();
+        notify(`ようこそ、${CURRENT_USER}さん`);
       } else {
-        if(!confirm(`「${name}」さんご本人として利用を開始します。よろしいですか？\n（他の方の名前を選ぶことは禁止されています）`)) return;
+        // PIN未設定（旧登録・管理者による追加など）：初回設定を必須にする
+        openFirstSetup(name, ov);
       }
-      CURRENT_USER=name;
-      localStorage.setItem("workhub_user", CURRENT_USER);
-      updateUserBtn();
-      ov.remove();
-      render();
-      notify(`ようこそ、${CURRENT_USER}さん`);
     }));
   }
 
   const pinBtn=ov.querySelector("#up_pinsave");
   if(pinBtn) pinBtn.addEventListener("click",()=>{
     const v=ov.querySelector("#up_pin").value.trim();
-    if(v && !/^\d{4,8}$/.test(v)){ notify("PINは4〜8桁の数字で入力してください", true); return; }
+    if(!/^\d{4}$/.test(v)){ notify("PINは4桁の数字で入力してください（PINは必須のため解除できません）", true); return; }
     const m2=(S.members||[]).find(x=>x.name===CURRENT_USER);
     if(!m2){ notify("先に名前を登録してください", true); return; }
     m2.pin=v;
     persist("members", m2);
     ov.querySelector("#up_pin").value="";
-    ov.querySelector("#up_pin").placeholder=v?"設定済み（変更する場合は入力）":"未設定";
-    notify(v?"PINを設定しました。新しい端末で名前を選ぶ際に必要になります":"PINを解除しました");
+    ov.querySelector("#up_pin").placeholder="設定済み（変更する場合は新しい4桁を入力）";
+    notify("PINを保存しました");
   });
   const swBtn=ov.querySelector("#up_switch");
   if(swBtn) swBtn.addEventListener("click",()=>{
@@ -789,12 +833,13 @@ function showUserPicker(first){
   const mailBtn=ov.querySelector("#up_mailsave");
   if(mailBtn) mailBtn.addEventListener("click",()=>{
     const v=ov.querySelector("#up_mail").value.trim();
-    if(v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){ notify("メールアドレスの形式が正しくありません", true); return; }
+    if(!v){ notify("通知用メールアドレスは必須です", true); return; }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){ notify("メールアドレスの形式が正しくありません", true); return; }
     const m2=(S.members||[]).find(x=>x.name===CURRENT_USER);
     if(!m2){ notify("先に名前を登録してください", true); return; }
     m2.email=v;
     persist("members", m2);
-    notify(v?"通知用メールアドレスを保存しました":"メールアドレスを削除しました（通知は届きません）");
+    notify("通知用メールアドレスを保存しました");
   });
   const wsSel=ov.querySelector("#up_wstart");
   if(wsSel) wsSel.addEventListener("change",()=>{
@@ -808,7 +853,12 @@ function showUserPicker(first){
   if(startBtn) startBtn.addEventListener("click",()=>{
     const sei=ov.querySelector("#up_sei").value.trim();
     const mei=ov.querySelector("#up_mei").value.trim();
+    const pin=ov.querySelector("#up_newpin").value.trim();
+    const mail=ov.querySelector("#up_newmail").value.trim();
     if(!sei||!mei){ notify("姓と名の両方を入力してください", true); return; }
+    if(!/^\d{4}$/.test(pin)){ notify("PINは4桁の数字で入力してください", true); return; }
+    if(!mail){ notify("通知用メールアドレスを入力してください", true); return; }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)){ notify("メールアドレスの形式が正しくありません", true); return; }
     const name=`${sei} ${mei}`;
     if((S.members||[]).some(m=>m.name===name)){
       notify(`「${name}」はすでに登録されています。上の一覧からご自身の名前をタップしてください`, true);
@@ -816,7 +866,10 @@ function showUserPicker(first){
     }
     CURRENT_USER=name;
     localStorage.setItem("workhub_user", CURRENT_USER);
-    registerMember();
+    const m={id:CURRENT_USER, name:CURRENT_USER, pin:pin, email:mail};
+    S.members=S.members||[];
+    S.members.push(m);
+    persist("members", m);
     updateUserBtn();
     ov.remove();
     render();
