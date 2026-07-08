@@ -465,6 +465,8 @@ async function autoSync(){
     const next = { events:data.events||[], tasks:data.tasks||[], notes:data.notes||[], adjustments:data.adjustments||[], members:data.members||[] };
     if(JSON.stringify(next)!==JSON.stringify(S)){
       S = next;
+      // 利用中に自分が名簿から削除された場合は登録し直しを求める
+      if(CURRENT_USER && !(S.members||[]).some(x=>x.name===CURRENT_USER && !x.guest)){ ensureRegistered(false); }
       // 入力中のフォームを消さないため、フォームが開いている間は再描画を保留
       if(!formIsOpen()) render();
       else pendingRender=true;
@@ -508,8 +510,7 @@ async function boot(){
     if(cached && (cached.events||cached.tasks||cached.notes||cached.adjustments)){
       S = { events:cached.events||[], tasks:cached.tasks||[], notes:cached.notes||[], adjustments:cached.adjustments||[], members:cached.members||[] };
       LAST_SYNC=+localStorage.getItem("workhub_cache_time")||0;
-      if(!CURRENT_USER) showUserPicker(true);
-      else registerMember();
+      ensureRegistered(true);
       updateUserBtn();
       render();
       updateSyncState();
@@ -535,13 +536,23 @@ async function boot(){
         <button onclick="resetLocalData()" style="border:1px solid #C99A4B;background:#fff;color:#9A6A1F;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0">入力データを消去</button>
       </div>`;
   }
-  if(!CURRENT_USER) showUserPicker(true);
-  else registerMember();
+  ensureRegistered(true);
   updateUserBtn();
   render();
 }
 
 // 利用者を共有名簿に登録（共有先プルダウンの選択肢になる）
+// 起動時の利用者確認：名簿から削除された人は自動復活させず、登録をやり直してもらう
+function ensureRegistered(isFresh){
+  if(!CURRENT_USER){ showUserPicker(true); return; }
+  const m=(S.members||[]).find(x=>x.name===CURRENT_USER && !x.guest);
+  if(m) return;
+  CURRENT_USER="";
+  try{ localStorage.removeItem("workhub_user"); }catch(e){}
+  updateUserBtn();
+  showUserPicker(true);
+  if(!isFresh) notify("この端末の登録名が名簿に見つかりません。お名前を選び直すか、改めて登録してください", true);
+}
 function registerMember(){
   if(!CURRENT_USER) return;
   S.members = S.members||[];
@@ -597,8 +608,9 @@ function openMemberManager(){
       <div style="max-height:300px;overflow-y:auto;margin-bottom:14px">
       ${ms.length===0?`<div class="note-small" style="color:#8A93A2">登録されているメンバーはいません</div>`:
         ms.map(m=>`<div class="mrow">
-          <b>${esc(m.name)}${m.guest?`<span class="guesttag">ゲスト</span>`:""}${m.name===CURRENT_USER?` <span class="autotag">自分</span>`:""}</b>
+          <b>${esc(m.name)}${m.pin?" 🔒":""}${m.guest?`<span class="guesttag">ゲスト</span>`:""}${m.name===CURRENT_USER?` <span class="autotag">自分</span>`:""}</b>
           <button class="mini" onclick="renameMember('${esc(String(m.id))}')">改名</button>
+          ${m.pin?`<button class="mini" onclick="resetPin('${esc(String(m.id))}')">PIN解除</button>`:""}
           <button class="mini" onclick="toggleGuestFlag('${esc(String(m.id))}')">${m.guest?"社員にする":"ゲストにする"}</button>
           <button class="mini" onclick="delMember('${esc(String(m.id))}')">削除</button>
         </div>`).join("")}
@@ -647,6 +659,15 @@ function toggleGuestFlag(id){
   redrawMemberMgr(); render();
   notify(m.guest?`「${m.name}」をゲストに変更しました`:`「${m.name}」を社員に変更しました`);
 }
+function resetPin(id){
+  if(!isAdmin()){ notify(`メンバーの管理は管理者のみが行えます（管理者：${(CONFIG.admins||[]).join("、")}）`, true); return; }
+  const m=findMember(id); if(!m) return;
+  if(!confirm(`「${m.name}」のPINを解除します。本人がPINを忘れた場合などに使ってください。よろしいですか？`)) return;
+  m.pin="";
+  persist("members", m);
+  redrawMemberMgr(); render();
+  notify("PINを解除しました。本人が利用者設定から再設定できます");
+}
 function delMember(id){
   if(!isAdmin()){ notify(`メンバーの管理は管理者のみが行えます（管理者：${(CONFIG.admins||[]).join("、")}）`, true); return; }
 
@@ -678,42 +699,101 @@ function showUserPicker(first){
   const ov = document.createElement("div");
   ov.className = "overlay";
   if(first) ov.dataset.must="1";
-  const parts = (CURRENT_USER||"").split(" ");
   const names=[...new Set((S.members||[]).filter(m=>!m.guest&&m.name).map(m=>m.name))].sort();
-  ov.innerHTML = `<div class="modal">
-    <h2>${names.length?"お名前を選んでください":"お名前を入力してください"}</h2>
-    ${names.length?`<p>登録済みの方は、自分の名前をタップしてください。</p>
-      <div class="namegrid">${names.map(n=>`<button class="namebtn" data-n="${esc(n)}">${esc(n)}</button>`).join("")}</div>
-      <div class="seclabel" style="margin-top:4px">初めての方（新規登録）</div>`
-    :`<p>フルネームで入力してください。タスクの担当者や議事録の作成者として表示されます。${first?"（次回からは自動で表示されます）":""}</p>`}
-    <div class="row" style="margin-bottom:14px">
-      <label style="margin-bottom:0">姓<input id="up_sei" placeholder="例）山田" value="${esc(names.length?"":(parts[0]||""))}"></label>
-      <label style="margin-bottom:0">名<input id="up_mei" placeholder="例）太郎" value="${esc(names.length?"":(parts[1]||""))}"></label>
-    </div>
-    <button class="prim" id="up_start" style="width:100%">${names.length?"新規登録してはじめる":"はじめる"}</button>
-    ${names.length?`<div class="note-small" style="margin-top:8px">※ 新規登録は初めての方だけご利用ください。同じ人の名前が二重に登録されると、共有先の候補が増えて分かりにくくなります。</div>`:""}
-    ${first?"":`
-      <div class="seclabel" style="margin-top:18px">通知用メールアドレス（任意）</div>
+  const me=(S.members||[]).find(m=>m.name===CURRENT_USER);
+  const registered = !first && CURRENT_USER;
+
+  if(registered){
+    // ===== 登録済み：名前は固定表示（なりすまし防止のため切り替え不可） =====
+    ov.innerHTML = `<div class="modal">
+      <h2>利用者設定</h2>
+      <div class="seclabel" style="margin-top:0">この端末の利用者</div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:4px">${esc(CURRENT_USER)}</div>
+      <div class="note-small" style="margin:0 0 14px">なりすまし防止のため、この画面から他の人の名前には切り替えられません。氏名の変更は管理者（メンバーの管理→改名）にご依頼ください。</div>
+      <div class="seclabel">かんたんPIN（任意・4〜8桁の数字）</div>
       <div style="display:flex;gap:8px;align-items:center">
-        <input id="up_mail" type="email" placeholder="例）taro@example.com" value="${esc(((S.members||[]).find(m=>m.name===CURRENT_USER)||{}).email||"")}" style="margin-top:0;flex:1">
+        <input id="up_pin" type="password" inputmode="numeric" placeholder="${me&&me.pin?"設定済み（変更する場合は入力）":"未設定"}" style="margin-top:0;flex:1">
+        <button class="ghost" id="up_pinsave" style="margin:0;flex-shrink:0">保存</button>
+      </div>
+      <div class="note-small">設定すると、新しい端末であなたの名前を選ぶときにPINの入力が必要になり、他の人があなたの名前を使うことを防げます。空にして保存すると解除されます。</div>
+      <div class="seclabel" style="margin-top:14px">通知用メールアドレス（任意）</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="up_mail" type="email" placeholder="例）taro@example.com" value="${esc((me||{}).email||"")}" style="margin-top:0;flex:1">
         <button class="ghost" id="up_mailsave" style="margin:0;flex-shrink:0">保存</button>
       </div>
-      <div class="note-small">毎朝のまとめメール通知に使われます（管理者が通知機能を設定している場合）。空にして保存すると通知は届きません。</div>
+      <div class="note-small">毎朝のまとめ・日程確定の通知に使われます。空にして保存すると通知は届きません。</div>
       <div class="seclabel" style="margin-top:14px">カレンダーの週の始まり</div>
       <select id="up_wstart" style="margin-top:0">
         <option value="sun" ${weekStart()===0?"selected":""}>日曜はじまり</option>
         <option value="mon" ${weekStart()===1?"selected":""}>月曜はじまり</option>
-      </select>`}
-    ${first||!isAdmin()?"":`<button class="ghost" id="up_mgr" style="width:100%;margin-top:12px">${ico("sliders",15)} メンバーの管理（改名・削除など／管理者のみ）</button>`}
-  </div>`;
+      </select>
+      ${isAdmin()?`<button class="ghost" id="up_mgr" style="width:100%;margin-top:14px">${ico("sliders",15)} メンバーの管理（改名・削除・PIN解除／管理者のみ）</button>`:""}
+      <button class="ghost" id="up_switch" style="width:100%;margin-top:8px;color:#8A93A2">この端末の利用者を切り替える（共有PC用）</button>
+      <button class="prim" style="width:100%;margin-top:8px" onclick="this.closest('.overlay').remove()">閉じる</button>
+    </div>`;
+  } else {
+    // ===== 初回（または利用者切り替え）：名前を選ぶ／新規登録 =====
+    ov.innerHTML = `<div class="modal">
+      <h2>${names.length?"お名前を選んでください":"お名前を入力してください"}</h2>
+      ${names.length?`<p>ご自身の名前をタップしてください。<b>他の方の名前は選ばないでください。</b>🔒はPIN設定済みです。</p>
+        <div class="namegrid">${names.map(n=>`<button class="namebtn" data-n="${esc(n)}">${esc(n)}${((S.members||[]).find(m=>m.name===n)||{}).pin?" 🔒":""}</button>`).join("")}</div>
+        <div class="seclabel" style="margin-top:4px">初めての方（新規登録）</div>`
+      :`<p>フルネームで入力してください。タスクの担当者や議事録の作成者として表示されます。（次回からは自動で表示されます）</p>`}
+      <div class="row" style="margin-bottom:14px">
+        <label style="margin-bottom:0">姓<input id="up_sei" placeholder="例）山田"></label>
+        <label style="margin-bottom:0">名<input id="up_mei" placeholder="例）太郎"></label>
+      </div>
+      <button class="prim" id="up_start" style="width:100%">${names.length?"新規登録してはじめる":"はじめる"}</button>
+      ${names.length?`<div class="note-small" style="margin-top:8px">※ 新規登録は初めての方だけご利用ください。すでに登録済みの方が別名で登録すると、名簿が二重になります。</div>`:""}
+    </div>`;
+    ov.querySelectorAll(".namebtn").forEach(b=>b.addEventListener("click",()=>{
+      const name=b.dataset.n;
+      const m=(S.members||[]).find(x=>x.name===name);
+      if(m && m.pin){
+        const input=prompt(`「${name}」さんのかんたんPIN（数字）を入力してください`);
+        if(input===null) return;
+        if(String(input).trim()!==String(m.pin)){ notify("PINが一致しません", true); return; }
+      } else {
+        if(!confirm(`「${name}」さんご本人として利用を開始します。よろしいですか？\n（他の方の名前を選ぶことは禁止されています）`)) return;
+      }
+      CURRENT_USER=name;
+      localStorage.setItem("workhub_user", CURRENT_USER);
+      updateUserBtn();
+      ov.remove();
+      render();
+      notify(`ようこそ、${CURRENT_USER}さん`);
+    }));
+  }
+
+  const pinBtn=ov.querySelector("#up_pinsave");
+  if(pinBtn) pinBtn.addEventListener("click",()=>{
+    const v=ov.querySelector("#up_pin").value.trim();
+    if(v && !/^\d{4,8}$/.test(v)){ notify("PINは4〜8桁の数字で入力してください", true); return; }
+    const m2=(S.members||[]).find(x=>x.name===CURRENT_USER);
+    if(!m2){ notify("先に名前を登録してください", true); return; }
+    m2.pin=v;
+    persist("members", m2);
+    ov.querySelector("#up_pin").value="";
+    ov.querySelector("#up_pin").placeholder=v?"設定済み（変更する場合は入力）":"未設定";
+    notify(v?"PINを設定しました。新しい端末で名前を選ぶ際に必要になります":"PINを解除しました");
+  });
+  const swBtn=ov.querySelector("#up_switch");
+  if(swBtn) swBtn.addEventListener("click",()=>{
+    if(!confirm("この端末の利用者を切り替えます。次の画面で名前を選び直してください（PIN設定済みの名前はPINが必要です）。よろしいですか？")) return;
+    CURRENT_USER="";
+    try{ localStorage.removeItem("workhub_user"); }catch(e){}
+    updateUserBtn();
+    ov.remove();
+    showUserPicker(true);
+  });
   const mailBtn=ov.querySelector("#up_mailsave");
   if(mailBtn) mailBtn.addEventListener("click",()=>{
     const v=ov.querySelector("#up_mail").value.trim();
     if(v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){ notify("メールアドレスの形式が正しくありません", true); return; }
-    const m=(S.members||[]).find(x=>x.name===CURRENT_USER);
-    if(!m){ notify("先に名前を登録してください", true); return; }
-    m.email=v;
-    persist("members", m);
+    const m2=(S.members||[]).find(x=>x.name===CURRENT_USER);
+    if(!m2){ notify("先に名前を登録してください", true); return; }
+    m2.email=v;
+    persist("members", m2);
     notify(v?"通知用メールアドレスを保存しました":"メールアドレスを削除しました（通知は届きません）");
   });
   const wsSel=ov.querySelector("#up_wstart");
@@ -722,27 +802,25 @@ function showUserPicker(first){
     render();
     notify(`カレンダーを${wsSel.value==="mon"?"月曜":"日曜"}はじまりにしました`);
   });
-  ov.querySelectorAll(".namebtn").forEach(b=>b.addEventListener("click",()=>{
-    CURRENT_USER=b.dataset.n;
+  const mgrBtn=ov.querySelector("#up_mgr");
+  if(mgrBtn) mgrBtn.addEventListener("click",()=>{ ov.remove(); openMemberManager(); });
+  const startBtn=ov.querySelector("#up_start");
+  if(startBtn) startBtn.addEventListener("click",()=>{
+    const sei=ov.querySelector("#up_sei").value.trim();
+    const mei=ov.querySelector("#up_mei").value.trim();
+    if(!sei||!mei){ notify("姓と名の両方を入力してください", true); return; }
+    const name=`${sei} ${mei}`;
+    if((S.members||[]).some(m=>m.name===name)){
+      notify(`「${name}」はすでに登録されています。上の一覧からご自身の名前をタップしてください`, true);
+      return;
+    }
+    CURRENT_USER=name;
     localStorage.setItem("workhub_user", CURRENT_USER);
     registerMember();
     updateUserBtn();
     ov.remove();
     render();
     notify(`ようこそ、${CURRENT_USER}さん`);
-  }));
-  const mgrBtn=ov.querySelector("#up_mgr");
-  if(mgrBtn) mgrBtn.addEventListener("click",()=>{ ov.remove(); openMemberManager(); });
-  ov.querySelector("#up_start").addEventListener("click", ()=>{
-    const sei = ov.querySelector("#up_sei").value.trim();
-    const mei = ov.querySelector("#up_mei").value.trim();
-    if(!sei || !mei){ notify("姓と名の両方を入力してください", true); return; }
-    CURRENT_USER = `${sei} ${mei}`;
-    localStorage.setItem("workhub_user", CURRENT_USER);
-    registerMember();
-    updateUserBtn();
-    ov.remove();
-    render();
   });
   document.body.appendChild(ov);
 }
@@ -924,6 +1002,7 @@ function confirmCandidate(adjId,candId,meetUrl){
     createdBy:CURRENT_USER, shareMode:"none", shareWith:[], shared:false};
   S.events.push(ev);
   adj.status="確定"; adj.confirmed=`${fmtMD(c.date)} ${c.time}`;
+  adj.confirmNotified=false;   // GAS側の確定通知（メール）の送信対象にする
   adj.confirmedDate=c.date; adj.confirmedTime=c.time; adj.confirmedEnd=end; adj.meetUrl=meetUrl||"";
   adj.eventId=ev.id;
   persist("events", ev); persist("adjustments", adj);
@@ -945,6 +1024,7 @@ function reopenAdj(id){
   if(ev){ S.events.splice(S.events.indexOf(ev),1); removeIt("events", ev.id); }
   adj.status="調整中";
   adj.confirmed=""; adj.confirmedDate=""; adj.confirmedTime=""; adj.confirmedEnd=""; adj.meetUrl=""; adj.eventId="";
+  adj.confirmNotified=false;
   persist("adjustments", adj);
   openAdj=id; render();
   notify("再調整に戻しました。回答用URLは再び回答ページとして機能します");
